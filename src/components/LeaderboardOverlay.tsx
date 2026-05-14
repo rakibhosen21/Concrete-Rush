@@ -48,18 +48,18 @@ export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ onClose 
         </div>
 
         {/* Cyberpunk Header */}
-        <div className="bg-yellow-400 p-8 flex items-center justify-between">
+        <div className="bg-yellow-400 p-6 sm:p-8 flex items-center justify-between">
            <div>
-              <div className="text-[10px] font-black uppercase tracking-[0.4em] text-black/40 mb-1">Central_Intelligence</div>
-              <h2 className="text-3xl font-black italic text-black tracking-tighter uppercase leading-none">Classified Leaderboard</h2>
+              <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-black/40 mb-0.5 sm:mb-1 leading-none uppercase">Central_Intelligence</div>
+              <h2 className="text-xl sm:text-3xl font-black italic text-black tracking-tighter uppercase leading-tight">Classified Ranking</h2>
            </div>
-           <FileText size={48} className="text-black/20" />
+           <FileText size={32} className="text-black/20 sm:w-[48px] sm:h-[48px]" />
         </div>
 
-        <div className="p-8">
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
+        <div className="p-4 sm:p-8">
+          <div className="space-y-2 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-2 sm:pr-4 custom-scrollbar">
             {entries.length === 0 ? (
-                <div className="text-center py-20 opacity-20 uppercase tracking-[0.5em] text-xs">No Data Logged</div>
+                <div className="text-center py-10 sm:py-20 opacity-20 uppercase tracking-[0.4em] sm:tracking-[0.5em] text-[10px] sm:text-xs">No Data Logged</div>
             ) : (
                 entries.map((entry) => (
                     <motion.div 
@@ -67,20 +67,20 @@ export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ onClose 
                         initial={{ x: -10, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ delay: entry.rank * 0.05 }}
-                        className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-lg group hover:border-yellow-400/40 transition-all font-mono"
+                        className="flex items-center justify-between p-3 sm:p-4 bg-black/40 border border-white/5 rounded-lg group hover:border-yellow-400/40 transition-all font-mono"
                     >
-                        <div className="flex items-center gap-6">
-                            <span className={`text-xl font-black italic w-6 ${entry.rank === 1 ? 'text-yellow-400' : 'text-zinc-500'}`}>0{entry.rank}</span>
-                            <span className="text-2xl">{entry.avatar}</span>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold uppercase tracking-widest text-zinc-300">{entry.name}</span>
-                                <span className={`text-[8px] tracking-[0.2em] font-black ${
+                        <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+                            <span className={`text-sm sm:text-xl font-black italic w-5 sm:w-6 ${entry.rank === 1 ? 'text-yellow-400' : 'text-zinc-500'}`}>{entry.rank < 10 ? `0${entry.rank}` : entry.rank}</span>
+                            <span className="text-xl sm:text-2xl shrink-0">{entry.avatar}</span>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-300 truncate">{entry.name}</span>
+                                <span className={`text-[6px] sm:text-[8px] tracking-[0.1em] sm:tracking-[0.2em] font-black ${
                                     entry.grade === 'S' ? 'text-yellow-400' : 
                                     entry.grade === 'A' ? 'text-white' : 'text-zinc-600'
                                 }`}>GRADE_{entry.grade}</span>
                             </div>
                         </div>
-                        <div className="text-2xl font-black italic tracking-tighter text-yellow-400 group-hover:scale-110 transition-transform">
+                        <div className="text-lg sm:text-2xl font-black italic tracking-tighter text-yellow-400 group-hover:scale-110 transition-transform tabular-nums shrink-0 ml-2">
                             {entry.score.toLocaleString()}
                         </div>
                     </motion.div>
@@ -89,8 +89,8 @@ export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ onClose 
           </div>
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-black/20 text-center">
-            <span className="text-[9px] font-mono opacity-20 uppercase tracking-[0.5em]">Network_Sync: Operational_Link_Beta</span>
+        <div className="p-4 sm:p-6 border-t border-white/5 bg-black/20 text-center">
+            <span className="text-[7px] sm:text-[9px] font-mono opacity-20 uppercase tracking-[0.4em] sm:tracking-[0.5em]">Network_Sync: Operational_Link_Beta</span>
         </div>
       </motion.div>
     </motion.div>

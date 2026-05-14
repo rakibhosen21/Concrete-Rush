@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: Math.floor(window.innerWidth * 0.65),
-  height: Math.floor(window.innerHeight * 0.75),
+  width: 600,
+  height: 900,
   parent: 'game-container',
   transparent: true,
   scale: {

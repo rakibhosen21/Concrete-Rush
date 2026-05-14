@@ -5,7 +5,7 @@ export const Logo: React.FC = () => {
   return (
     <div className="flex items-center gap-4 select-none group pointer-events-auto">
       {/* Hexagon Icon */}
-      <div className="relative">
+      <div className="relative scale-75 sm:scale-100 origin-left">
         <svg width="48" height="54" viewBox="0 0 48 54" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]">
           <path d="M24 2L44.7846 14V38L24 50L3.21539 38V14L24 2Z" stroke="#FACC15" strokeWidth="2" fill="#FACC15" fillOpacity="0.1"/>
           <path d="M24 10L36.1244 17V31L24 38L11.8756 31V17L24 10Z" stroke="#FACC15" strokeWidth="1" fill="#FACC15" fillOpacity="0.2"/>
@@ -21,7 +21,7 @@ export const Logo: React.FC = () => {
         <div className="flex items-end leading-none gap-2">
           {/* CONCRETE with crack effect */}
           <div className="relative overflow-hidden">
-            <h1 className="text-4xl font-black italic tracking-tighter text-zinc-300 uppercase">
+            <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter text-zinc-300 uppercase">
               Concrete
             </h1>
             <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" viewBox="0 0 200 40">
@@ -31,21 +31,21 @@ export const Logo: React.FC = () => {
           
           {/* RUSH with speed streaks */}
           <div className="relative">
-            <h1 className="text-4xl font-black italic tracking-tighter text-yellow-400 uppercase">
+            <h1 className="text-2xl sm:text-4xl font-black italic tracking-tighter text-yellow-400 uppercase">
               Rush
             </h1>
             {/* Speed streaks SVG Filter/Paths */}
-            <div className="absolute -right-8 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-60">
-              <div className="w-6 h-0.5 bg-cyan-400 animate-pulse" />
-              <div className="w-10 h-0.5 bg-cyan-400 animate-pulse delay-75" />
-              <div className="w-4 h-0.5 bg-cyan-400 animate-pulse delay-150" />
+            <div className="absolute -right-4 sm:-right-8 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 sm:gap-1 opacity-60">
+              <div className="w-4 sm:w-6 h-[1px] sm:h-0.5 bg-cyan-400 animate-pulse" />
+              <div className="w-6 sm:w-10 h-[1px] sm:h-0.5 bg-cyan-400 animate-pulse delay-75" />
+              <div className="w-2 sm:w-4 h-[1px] sm:h-0.5 bg-cyan-400 animate-pulse delay-150" />
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-2 mt-1">
-          <div className="h-[2px] flex-grow bg-gradient-to-r from-yellow-400/50 to-transparent" />
-          <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-500">Bag Hunt Protocol</span>
+          <div className="h-[1px] sm:h-[2px] flex-grow bg-gradient-to-r from-yellow-400/50 to-transparent" />
+          <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-[0.4em] text-zinc-500 whitespace-nowrap">Bag Hunt Protocol</span>
         </div>
       </div>
     </div>

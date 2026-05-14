@@ -95,7 +95,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="w-full h-screen bg-[#050208] text-white overflow-hidden select-none flex flex-col items-center justify-center relative">
+      <div className="w-full h-svh bg-[#050208] text-white overflow-hidden select-none flex flex-col items-center justify-center relative">
         
         {/* Top bar profile - always visible when active */}
         {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && profile && (
@@ -103,14 +103,14 @@ export default function App() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => setShowProfile(true)}
-            className="absolute top-6 left-6 z-[100] flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/10 p-2 pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group"
+            className="absolute top-4 sm:top-6 left-4 sm:left-6 z-[100] flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-md border border-white/10 p-1.5 pr-3 sm:p-2 sm:pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group max-w-[calc(100vw-2rem)]"
           >
-            <div className="text-xl bg-yellow-400 w-10 h-10 flex items-center justify-center rounded-full text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]">
+            <div className="text-sm sm:text-xl bg-yellow-400 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-black shadow-[0_0_15px_rgba(250,204,21,0.3)] shrink-0">
               {profile.avatar}
             </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-1 group-hover:text-yellow-400 transition-colors uppercase">{profile.name}</span>
-              <span className="text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none">ID: {profile.codename || 'OPERATIVE'}</span>
+            <div className="flex flex-col min-w-0 pr-1">
+              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-0.5 sm:mb-1 group-hover:text-yellow-400 transition-colors uppercase truncate">{profile.name}</span>
+              <span className="text-[6px] sm:text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none truncate overflow-hidden">ID: {profile.codename || 'OPERATIVE'}</span>
             </div>
           </motion.div>
         )}
@@ -119,16 +119,16 @@ export default function App() {
         <motion.div 
           animate={{ opacity: multiplier > 1 ? [0, 0.4, 0] : 0 }}
           transition={{ repeat: Infinity, duration: 1 }}
-          className="absolute inset-0 z-40 border-[20px] border-yellow-400/30 pointer-events-none"
+          className="absolute inset-0 z-40 border-[8px] sm:border-[20px] border-yellow-400/30 pointer-events-none"
         />
 
         {/* Main Game Layout Container */}
-        <div className="relative z-10 w-full flex items-center justify-center gap-12 px-8">
+        <div className="relative z-10 w-full max-w-7xl flex items-center justify-center gap-4 sm:gap-8 lg:gap-12 px-4 sm:px-8">
           
           {/* Left Panel - Navigation */}
           {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && (
-            <div className="hidden lg:flex flex-col gap-6 w-72">
-              <div className="bg-zinc-900 border border-white/5 p-6 rounded-xl space-y-4">
+            <div className="hidden lg:flex flex-col gap-6 w-64 xl:w-72">
+              <div className="bg-zinc-900 border border-white/5 p-5 xl:p-6 rounded-xl space-y-4">
                 <button 
                   onClick={() => setShowLeaderboard(true)}
                   className="w-full bg-black/40 hover:bg-yellow-400/10 hover:border-yellow-400/30 border border-white/5 p-4 rounded-lg flex items-center gap-4 transition-all group"
@@ -148,7 +148,7 @@ export default function App() {
           )}
 
           {/* Center Game Container */}
-          <div className="relative">
+          <div className="relative flex-none">
             <Suspense fallback={<LoadingSpinner />}>
               <GameContainer 
                 gameState={gameState}
@@ -162,11 +162,11 @@ export default function App() {
 
           {/* Right Panel - Realtime Data */}
           {gameState === 'PLAYING' && (
-            <div className="hidden lg:flex flex-col gap-6 w-72">
+            <div className="hidden lg:flex flex-col gap-6 w-64 xl:w-72">
                <motion.div 
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-zinc-900 border border-white/5 p-6 rounded-xl relative group overflow-hidden"
+                className="bg-zinc-900 border border-white/5 p-5 xl:p-6 rounded-xl relative group overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-20 h-20 bg-cyan-400/5 blur-xl -z-10" />
                 <div className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-4">Core Integrity</div>
@@ -182,21 +182,21 @@ export default function App() {
                 </div>
               </motion.div>
 
-              <div className="bg-zinc-900 border border-yellow-400/20 p-6 rounded-xl relative overflow-hidden group">
+              <div className="bg-zinc-900 border border-yellow-400/20 p-5 xl:p-6 rounded-xl relative overflow-hidden group">
                  <div className="absolute inset-0 bg-gradient-brand-rotating opacity-10" />
                  <div className="absolute top-0 right-0 p-2 opacity-10">
                     <TrendingUp size={24} className="text-yellow-400" />
                  </div>
                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-400 mb-1">Multiplier</div>
-                 <div className="text-4xl font-black italic tracking-tighter">X{multiplier.toFixed(2)}</div>
+                 <div className="text-3xl xl:text-4xl font-black italic tracking-tighter">X{multiplier.toFixed(2)}</div>
               </div>
 
-              <div className="bg-zinc-900 border border-white/5 p-6 rounded-xl">
+              <div className="bg-zinc-900 border border-white/5 p-5 xl:p-6 rounded-xl">
                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-4">Tactical Data</div>
                  <div className="space-y-4">
                     <div>
                        <div className="text-[8px] text-zinc-600 mb-1 tracking-widest uppercase">Current_Yield</div>
-                       <div className="text-3xl font-black italic tracking-tighter tabular-nums">{score.toLocaleString()}</div>
+                       <div className="text-2xl xl:text-3xl font-black italic tracking-tighter tabular-nums">{score.toLocaleString()}</div>
                     </div>
                  </div>
               </div>

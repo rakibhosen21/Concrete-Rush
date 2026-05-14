@@ -74,12 +74,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     }
   };
 
-  const width = Math.floor(window.innerWidth * 0.65);
-  const height = Math.floor(window.innerHeight * 0.75);
-
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#050208] overflow-hidden select-none">
-      <div className="relative" style={{ width, height }}>
+    <div className="relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-[95vw] sm:w-[85vw] md:w-[70vw] lg:w-[50vw] xl:w-[40vw] max-h-[85vh] lg:max-h-[80vh]">
+      <div className="w-full aspect-[2/3] relative flex-shrink min-h-0">
         <div 
           id="game-container" 
           className="w-full h-full relative shadow-[0_0_50px_rgba(0,240,255,0.3)] border-2 border-[#00f0ff]/30 rounded-lg overflow-hidden"
@@ -92,37 +89,35 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         >
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
-
-        {/* Mobile Controls Overlay */}
-        {gameState === 'PLAYING' && (
-          <div className="md:hidden absolute bottom-0 left-0 right-0 h-[80px] pointer-events-none flex z-30">
-             <button 
-               onPointerDown={() => {
-                 moveCar(-1);
-                 if (navigator.vibrate) navigator.vibrate(30);
-               }}
-               className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-r border-t-2 border-r-cyan-400/20 border-t-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.2)] active:bg-cyan-400 active:border-t-white transition-all flex flex-col items-center justify-center group"
-             >
-               <span className="text-cyan-400 font-black text-2xl group-active:text-black leading-none uppercase tracking-tighter">◄◄</span>
-               <span className="text-cyan-400/60 font-mono text-[10px] group-active:text-black uppercase tracking-widest mt-1">Left</span>
-             </button>
-             <button 
-               onPointerDown={() => {
-                 moveCar(1);
-                 if (navigator.vibrate) navigator.vibrate(30);
-               }}
-               className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-l border-t-2 border-l-yellow-400/20 border-t-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)] active:bg-yellow-400 active:border-t-white transition-all flex flex-col items-center justify-center group"
-             >
-               <span className="text-yellow-400 font-black text-2xl group-active:text-black leading-none uppercase tracking-tighter">►►</span>
-               <span className="text-yellow-400/60 font-mono text-[10px] group-active:text-black uppercase tracking-widest mt-1">Right</span>
-             </button>
-          </div>
-        )}
       </div>
-      
-      {/* Background Decorative Elements for the side areas */}
-      <div className="absolute top-0 left-0 w-[17.5%] h-full bg-gradient-to-r from-black to-transparent opacity-50" />
-      <div className="absolute top-0 right-0 w-[17.5%] h-full bg-gradient-to-l from-black to-transparent opacity-50" />
+
+      {/* Mobile Controls - Positioned below the game container on mobile */}
+      {gameState === 'PLAYING' && (
+        <div className="lg:hidden w-full h-[80px] shrink-0 pointer-events-none flex z-30 mt-4">
+           <button 
+             onPointerDown={(e) => {
+               (e.target as HTMLElement).setPointerCapture(e.pointerId);
+               moveCar(-1);
+               if (navigator.vibrate) navigator.vibrate(30);
+             }}
+             className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-r border-t-2 border-r-cyan-400/20 border-t-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.2)] active:bg-cyan-400 active:border-t-white transition-all flex flex-col items-center justify-center group"
+           >
+             <span className="text-cyan-400 font-black text-2xl group-active:text-black leading-none uppercase tracking-tighter">◄◄</span>
+             <span className="text-cyan-400/60 font-mono text-[10px] group-active:text-black uppercase tracking-widest mt-1">Left</span>
+           </button>
+           <button 
+             onPointerDown={(e) => {
+               (e.target as HTMLElement).setPointerCapture(e.pointerId);
+               moveCar(1);
+               if (navigator.vibrate) navigator.vibrate(30);
+             }}
+             className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-l border-t-2 border-l-yellow-400/20 border-t-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)] active:bg-yellow-400 active:border-t-white transition-all flex flex-col items-center justify-center group"
+           >
+             <span className="text-yellow-400 font-black text-2xl group-active:text-black leading-none uppercase tracking-tighter">►►</span>
+             <span className="text-yellow-400/60 font-mono text-[10px] group-active:text-black uppercase tracking-widest mt-1">Right</span>
+           </button>
+        </div>
+      )}
     </div>
   );
 };

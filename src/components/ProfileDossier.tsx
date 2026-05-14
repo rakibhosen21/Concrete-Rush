@@ -44,62 +44,62 @@ export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset
           </button>
         </div>
 
-        <div className="border border-white/10 p-8 m-1">
+        <div className="border border-white/10 p-5 sm:p-8 m-1 max-h-[90vh] overflow-y-auto custom-scrollbar">
           {/* Dossier Header */}
-          <div className="flex items-start justify-between mb-12 border-b border-white/10 pb-8">
-             <div className="flex items-center gap-8">
-                <div className="w-24 h-24 bg-black border-2 border-yellow-400/50 rounded-lg flex items-center justify-center text-5xl shadow-[0_0_20px_rgba(250,204,21,0.2)]">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-6 sm:gap-8 mb-8 sm:mb-12 border-b border-white/10 pb-8 text-center sm:text-left">
+             <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 min-w-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-black border-2 border-yellow-400/50 rounded-lg flex items-center justify-center text-4xl sm:text-5xl shadow-[0_0_20px_rgba(250,204,21,0.2)] shrink-0">
                    {profile.avatar}
                 </div>
-                <div>
-                   <div className="text-[10px] font-black uppercase tracking-[0.4em] text-yellow-400 mb-2">Classified_Access_Dossier</div>
-                   <h2 className="text-4xl font-black italic text-white tracking-tighter uppercase leading-none mb-3">{profile.name}</h2>
-                   <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-0.5 rounded border border-white/5">Role: {profile.codename || 'AGENT'}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <div className="min-w-0 overflow-hidden">
+                   <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-yellow-400 mb-1 sm:mb-2 leading-none uppercase truncate">Classified_Access_Dossier</div>
+                   <h2 className="text-2xl sm:text-4xl font-black italic text-white tracking-tighter uppercase leading-none mb-2 sm:mb-3 truncate">{profile.name}</h2>
+                   <div className="flex items-center justify-center sm:justify-start gap-3">
+                      <span className="text-[8px] sm:text-[10px] font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-0.5 rounded border border-white/5 truncate">Role: {profile.codename || 'AGENT'}</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
                    </div>
                 </div>
              </div>
-             <FileText size={48} className="text-white/5" />
+             <FileText size={32} className="text-white/5 sm:w-[48px] sm:h-[48px] hidden sm:block" />
           </div>
 
-          <div className="grid grid-cols-2 gap-10 mb-12">
-             <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10 mb-8 sm:mb-12">
+             <div className="space-y-6 sm:space-y-8">
                 <div>
-                   <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+                   <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Best_Yield_Record
                    </div>
-                   <div className="text-4xl font-black italic tracking-tighter text-white tabular-nums">{parseInt(highScore).toLocaleString()}</div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{parseInt(highScore).toLocaleString()}</div>
                 </div>
                 <div>
-                   <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+                   <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Best_Grade_Achieved
                    </div>
-                   <div className="text-4xl font-black italic tracking-tighter text-yellow-400">GRADE_{bestGrade}</div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-yellow-400">GRADE_{bestGrade}</div>
                 </div>
              </div>
 
-             <div className="space-y-8">
+             <div className="space-y-6 sm:space-y-8">
                 <div>
-                   <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+                   <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Accumulated_Total
                    </div>
-                   <div className="text-4xl font-black italic tracking-tighter text-white tabular-nums">{parseInt(totalYield).toLocaleString()}</div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{parseInt(totalYield).toLocaleString()}</div>
                 </div>
                 <div>
-                   <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+                   <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Total_System_Runs
                    </div>
-                   <div className="text-4xl font-black italic tracking-tighter text-white tabular-nums">{gamesPlayed} <span className="text-xs text-zinc-700">CYCLES</span></div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{gamesPlayed} <span className="text-xs text-zinc-700">CYCLES</span></div>
                 </div>
              </div>
           </div>
 
-          <div className="flex items-center justify-between pt-8 border-t border-white/5">
-              <div className="text-[8px] font-mono opacity-20 uppercase tracking-[0.5em]">Auth_ID_Ref: {Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:justify-between pt-6 sm:pt-8 border-t border-white/5">
+              <div className="text-[7px] sm:text-[8px] font-mono opacity-20 uppercase tracking-[0.4em] sm:tracking-[0.5em] truncate max-w-full">Auth_ID_Ref: {Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
               <button 
                 onClick={onReset}
-                className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-black border border-red-500/30 px-6 py-2 rounded font-black uppercase text-[10px] tracking-widest transition-all"
+                className="w-full sm:w-auto bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-black border border-red-500/30 px-6 py-2 rounded font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all"
               >
                 Wipe Identity
               </button>
