@@ -117,8 +117,13 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute top-0 left-0 right-0 z-[100] p-4 flex items-center justify-between pointer-events-none"
+            className="absolute top-0 left-0 right-0 z-[100] p-4 flex items-center justify-between pointer-events-none overflow-hidden"
           >
+            {/* Scan Line Overlay */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
+              <div className="h-full w-20 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-scan" />
+            </div>
+            
             <div 
               onClick={() => setShowProfile(true)}
               className="flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl border border-white/5 p-1 sm:p-1.5 pr-3 sm:pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group pointer-events-auto shadow-2xl overflow-hidden max-w-[200px] sm:max-w-[300px]"

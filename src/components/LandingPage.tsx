@@ -18,8 +18,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
       {/* Immersive Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60 pointer-events-none z-0" />
       
-      {/* Radial Glow - Subtle */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-400/5 blur-[120px] rounded-full pointer-events-none z-0" />
+      {/* Radial Glow - Subtle Ambient Fade */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-400/5 blur-[120px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
  
       <nav className="relative z-10 px-4 sm:px-8 py-4 sm:py-6 flex justify-between items-center max-w-7xl mx-auto w-full pointer-events-auto">
         <motion.div 
@@ -61,9 +61,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="flex flex-col items-center gap-6 sm:gap-10 w-full"
+          className="flex flex-col items-center gap-6 sm:gap-10 w-full relative"
         >
-          <div className="relative pointer-events-auto">
+          {/* Holographic Shimmer Layer */}
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-full blur-3xl opacity-50">
+             <div className="absolute inset-0 holographic-bg" />
+          </div>
+
+          <div className="relative pointer-events-auto z-10">
             <motion.button 
               onClick={onStart}
               onMouseEnter={() => setIsHovering(true)}
