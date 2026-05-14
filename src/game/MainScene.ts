@@ -137,6 +137,7 @@ export default class MainScene extends Phaser.Scene {
     horizonFog.fillGradientStyle(0x4a90e2, 0x4a90e2, 0x000000, 0x000000, 0.4, 0.4, 0, 0).setDepth(-6).setScrollFactor(0);
     horizonFog.fillRect(0, 0, width, 400);
 
+    /*
     this.tweens.add({
         targets: [sun, sunGlow],
         y: 115,
@@ -145,6 +146,7 @@ export default class MainScene extends Phaser.Scene {
         repeat: -1,
         ease: 'Sine.easeInOut'
     });
+    */
 
     // Substrate Ambient Day Clouds
     this.clouds = this.add.group();
@@ -438,6 +440,7 @@ export default class MainScene extends Phaser.Scene {
     
     // Engine Glow - Balanced
     const glow = this.add.pointlight(0, 10, 0x00f0ff, 70, 0.3);
+    /*
     this.tweens.add({
         targets: glow,
         intensity: 0.15,
@@ -446,6 +449,7 @@ export default class MainScene extends Phaser.Scene {
         yoyo: true,
         repeat: -1
     });
+    */
 
     bikeContainer.add([beam, shadow, bikeSprite, accents, glow]);
     
@@ -455,6 +459,7 @@ export default class MainScene extends Phaser.Scene {
     (this.vehicle.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     
     // Floating motion
+    /*
     this.tweens.add({
         targets: bikeContainer,
         y: -4,
@@ -464,6 +469,7 @@ export default class MainScene extends Phaser.Scene {
         repeat: -1,
         ease: 'Sine.easeInOut'
     });
+    */
   }
 
   private updateSpeedLines() {
@@ -503,6 +509,7 @@ export default class MainScene extends Phaser.Scene {
     const obstacle = this.obstacles.create(this.getLaneX(lane), -100, 'obstacle');
     obstacle.setVelocityY(this.speed);
     
+    /*
     this.tweens.add({
         targets: obstacle,
         alpha: { from: 0.9, to: 1 },
@@ -510,6 +517,7 @@ export default class MainScene extends Phaser.Scene {
         yoyo: true,
         repeat: -1
     });
+    */
   }
 
   private spawnBag() {
@@ -520,6 +528,7 @@ export default class MainScene extends Phaser.Scene {
     bag.setData('type', type);
     bag.setVelocityY(this.speed);
     
+    /*
     this.tweens.add({
         targets: bag,
         scale: 1.2,
@@ -527,6 +536,7 @@ export default class MainScene extends Phaser.Scene {
         yoyo: true,
         repeat: -1
     });
+    */
   }
 
   private handleObstacleCollision(car: any, obstacle: any) {

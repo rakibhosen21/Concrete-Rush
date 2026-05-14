@@ -57,7 +57,7 @@ export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset
                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2">
                       <span className="text-[10px] sm:text-sm font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-0.5 rounded border border-white/5 truncate">@{profile.username || profile.codename || 'AGENT'}</span>
                       <div className="flex items-center gap-2">
-                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                          <span className="text-[8px] sm:text-[10px] font-mono text-zinc-400/40 uppercase tracking-widest leading-none">Status: Operational</span>
                       </div>
                    </div>

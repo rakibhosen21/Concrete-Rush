@@ -11,8 +11,7 @@ export const Logo: React.FC = () => {
           <path d="M24 10L36.1244 17V31L24 38L11.8756 31V17L24 10Z" stroke="white" strokeWidth="0.5" fill="white" fillOpacity="0.1"/>
         </svg>
         <motion.div 
-          animate={{ opacity: [0.05, 0.15, 0.05] }}
-          transition={{ repeat: Infinity, duration: 5 }}
+          animate={{ opacity: 0.1 }}
           className="absolute inset-0 bg-white blur-xl rounded-full -z-10"
         />
       </div>
@@ -33,8 +32,7 @@ export const Logo: React.FC = () => {
             </h1>
             <motion.div 
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
-              animate={{ left: ['-100%', '200%'] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              animate={{ left: '-100%' }}
             />
           </div>
         </div>

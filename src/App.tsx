@@ -129,7 +129,7 @@ export default function App() {
               <div className="flex flex-col min-w-0">
                 <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-0.5 group-hover:text-yellow-400 transition-colors truncate">{profile.displayName || profile.name}</span>
                 <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+                  <div className="w-1 h-1 rounded-full bg-cyan-400 shrink-0" />
                   <span className="text-[6px] sm:text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none truncate opacity-60 group-hover:opacity-100 transition-opacity">@{profile.username || profile.codename || 'AGENT'}</span>
                 </div>
               </div>
@@ -150,8 +150,7 @@ export default function App() {
 
         {/* Screen Flash Border */}
         <motion.div 
-          animate={{ opacity: multiplier > 1 ? [0, 0.4, 0] : 0 }}
-          transition={{ repeat: Infinity, duration: 1 }}
+          animate={{ opacity: 0 }}
           className="absolute inset-0 z-40 border-[8px] sm:border-[20px] border-yellow-400/30 pointer-events-none"
         />
 

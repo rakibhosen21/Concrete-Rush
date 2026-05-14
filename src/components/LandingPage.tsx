@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
+import { motion } from 'motion/react';
 import { Volume2, VolumeX, Globe, Rocket } from 'lucide-react';
 import { Logo } from './Logo';
 import { SocialLinks } from './SocialLinks';
@@ -12,26 +12,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
   const highScore = parseInt(localStorage.getItem('concrete_high_score') || '0');
   const [isHovering, setIsHovering] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-
-  // Parallax Effect
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const springConfig = { damping: 25, stiffness: 150 };
-  const smoothX = useSpring(mouseX, springConfig);
-  const smoothY = useSpring(mouseY, springConfig);
-
-  const rotateX = useTransform(smoothY, [-500, 500], [5, -5]);
-  const rotateY = useTransform(smoothX, [-500, 500], [-5, 5]);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX - window.innerWidth / 2);
-      mouseY.set(e.clientY - window.innerHeight / 2);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   return (
     <div className="min-h-screen bg-transparent text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
@@ -65,7 +45,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
  
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
         <motion.div
-          style={{ rotateX, rotateY, perspective: 800 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.5 }}

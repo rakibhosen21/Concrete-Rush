@@ -69,14 +69,14 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
 
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse" />
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500" />
             <div className="text-green-500 text-[8px] sm:text-[10px] uppercase tracking-[0.4em]">Secure_Terminal_v4.2</div>
           </div>
 
           <div className="h-10 sm:h-12 mb-6 sm:mb-8">
             <p className="text-green-500/80 text-xs sm:text-sm leading-relaxed">
               {terminalText}
-              <span className="inline-block w-1.5 h-3 sm:w-2 sm:h-4 bg-green-500 ml-1 animate-pulse" />
+              <span className="inline-block w-1.5 h-3 sm:w-2 sm:h-4 bg-green-500 ml-1" />
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
                   </div>
 
                   {((displayName.length > 0 && displayName.length < 3) || (username.length > 0 && username.length < 3)) && (
-                    <div className="text-[7px] sm:text-[9px] text-red-500 uppercase tracking-widest animate-pulse text-left">
+                    <div className="text-[7px] sm:text-[9px] text-red-500 uppercase tracking-widest text-left">
                       Identity Unverified — Fields must be at least 3 characters.
                     </div>
                   )}

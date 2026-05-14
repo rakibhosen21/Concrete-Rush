@@ -82,7 +82,7 @@ export const IntroLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }
               }}
               transition={{ 
                 duration: 5 + Math.random() * 5, 
-                repeat: Infinity,
+                repeat: 0,
                 delay: Math.random() * 5
               }}
               className="absolute w-1 h-1 bg-cyan-400/30 rounded-full blur-[1px]"
@@ -121,7 +121,7 @@ export const IntroLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }
             <motion.div 
               className="absolute -inset-x-20 inset-y-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-30deg]"
               animate={{ left: ['-100%', '200%'] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 4, repeat: 0, ease: "easeInOut" }}
             />
           </div>
           <motion.div 

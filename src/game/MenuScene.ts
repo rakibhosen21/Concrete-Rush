@@ -166,6 +166,7 @@ export default class MenuScene extends Phaser.Scene {
         this.bike = bikeContainer;
         
         // Idle animation
+        /*
         this.tweens.add({
             targets: this.bike,
             y: y - 3,
@@ -174,6 +175,7 @@ export default class MenuScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+        */
     }
 
     update(time: number, delta: number) {

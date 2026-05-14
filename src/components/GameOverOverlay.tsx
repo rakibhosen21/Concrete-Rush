@@ -51,7 +51,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, distanc
         className="max-w-md w-full bg-[#0a0a1a] border-2 border-yellow-400/20 rounded-2xl p-6 sm:p-8 text-center relative shadow-[0_0_80px_rgba(250,204,21,0.15)] overflow-y-auto max-h-[90vh]"
       >
         <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
+            <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500">System_Connection_Terminated</span>
         </div>
 

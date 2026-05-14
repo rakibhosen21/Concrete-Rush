@@ -16,7 +16,7 @@ export const LoadingSpinner: React.FC = () => {
                     className="absolute inset-0 border-[1px] border-transparent border-t-white rounded-full"
                 />
             </div>
-            <div className="font-mono text-[9px] tracking-[0.6em] text-zinc-500 uppercase animate-pulse">Syncing_Nodes</div>
+            <div className="font-mono text-[9px] tracking-[0.6em] text-zinc-500 uppercase">Syncing_Nodes</div>
         </div>
     );
 };
