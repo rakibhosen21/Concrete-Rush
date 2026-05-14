@@ -95,21 +95,27 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
         {/* Mobile Controls Overlay */}
         {gameState === 'PLAYING' && (
-          <div className="md:hidden absolute inset-0 pointer-events-none flex flex-col justify-end p-6 z-10">
-             <div className="flex justify-between w-full pointer-events-auto">
-                <button 
-                  onPointerDown={() => moveCar(-1)}
-                  className="w-20 h-20 bg-cyan-400/10 backdrop-blur-md border border-cyan-400/40 rounded-full flex items-center justify-center text-cyan-400 active:bg-cyan-400 active:text-black transition-all"
-                >
-                  <ChevronLeft size={32} />
-                </button>
-                <button 
-                  onPointerDown={() => moveCar(1)}
-                   className="w-20 h-20 bg-cyan-400/10 backdrop-blur-md border border-cyan-400/40 rounded-full flex items-center justify-center text-cyan-400 active:bg-cyan-400 active:text-black transition-all"
-                >
-                  <ChevronRight size={32} />
-                </button>
-             </div>
+          <div className="md:hidden absolute bottom-0 left-0 right-0 h-[80px] pointer-events-none flex z-30">
+             <button 
+               onPointerDown={() => {
+                 moveCar(-1);
+                 if (navigator.vibrate) navigator.vibrate(30);
+               }}
+               className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-r border-t-2 border-r-cyan-400/20 border-t-cyan-400 shadow-[0_0_15px_rgba(0,240,255,0.2)] active:bg-cyan-400 active:border-t-white transition-all flex flex-col items-center justify-center group"
+             >
+               <span className="text-cyan-400 font-black text-2xl group-active:text-black leading-none uppercase tracking-tighter">◄◄</span>
+               <span className="text-cyan-400/60 font-mono text-[10px] group-active:text-black uppercase tracking-widest mt-1">Left</span>
+             </button>
+             <button 
+               onPointerDown={() => {
+                 moveCar(1);
+                 if (navigator.vibrate) navigator.vibrate(30);
+               }}
+               className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-l border-t-2 border-l-yellow-400/20 border-t-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)] active:bg-yellow-400 active:border-t-white transition-all flex flex-col items-center justify-center group"
+             >
+               <span className="text-yellow-400 font-black text-2xl group-active:text-black leading-none uppercase tracking-tighter">►►</span>
+               <span className="text-yellow-400/60 font-mono text-[10px] group-active:text-black uppercase tracking-widest mt-1">Right</span>
+             </button>
           </div>
         )}
       </div>

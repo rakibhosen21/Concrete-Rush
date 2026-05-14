@@ -123,17 +123,22 @@ export default class MainScene extends Phaser.Scene {
         const h = Phaser.Math.Between(200, 600);
         const building = this.add.rectangle(x, 600 - h/2, w, h, 0x0a0515, 0.9).setScrollFactor(0.05).setDepth(-8);
         
-        // Add windows
+        // Add windows - More crisp dots
         const graphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-        graphics.fillStyle(0xffffff, 0.4);
-        for(let row=0; row<h/30; row++) {
-            for(let col=0; col<w/25; col++) {
-                if(Math.random() > 0.6) graphics.fillRect(10 + col*20, 20 + row*25, 10, 10);
+        graphics.fillStyle(0xffffff, 0.6);
+        for(let row=0; row<h/20; row++) {
+            for(let col=0; col<w/15; col++) {
+                if(Math.random() > 0.8) {
+                    // Random yellow/cyan/white windows
+                    const colors = [0xffffff, 0xfacc15, 0x00f0ff];
+                    graphics.fillStyle(colors[Math.floor(Math.random()*colors.length)], 0.6);
+                    graphics.fillRect(8 + col*12, 12 + row*18, 4, 4);
+                }
             }
         }
         const winTex = `win-${i}`;
         graphics.generateTexture(winTex, w, h);
-        const windows = this.add.image(x, 600 - h/2, winTex).setScrollFactor(0.05).setDepth(-7).setAlpha(0.5).setTint(0xffaa00);
+        const windows = this.add.image(x, 600 - h/2, winTex).setScrollFactor(0.05).setDepth(-7).setAlpha(0.6);
         
         this.buildings.add(building);
         this.buildings.add(windows);
@@ -313,9 +318,9 @@ export default class MainScene extends Phaser.Scene {
     }
 
     this.roadGroup = this.add.group();
-    for (let i = 0; i < 12; i++) {
-      const line1 = this.add.rectangle(centerX - roadWidth/6, i * 100, 2, 40, 0xffffff, 0.2);
-      const line2 = this.add.rectangle(centerX + roadWidth/6, i * 100, 2, 40, 0xffffff, 0.2);
+    for (let i = 0; i < 20; i++) { // Increased count
+      const line1 = this.add.rectangle(centerX - roadWidth/6, i * 60, 2, 30, 0xffffff, 0.3);
+      const line2 = this.add.rectangle(centerX + roadWidth/6, i * 60, 2, 30, 0xffffff, 0.3);
       this.roadGroup.add(line1);
       this.roadGroup.add(line2);
     }
@@ -324,6 +329,15 @@ export default class MainScene extends Phaser.Scene {
   private createPlayer() {
     const carContainer = this.add.container(0, 0);
     
+    // Headlight beams
+    const beamL = this.add.graphics();
+    beamL.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.4, 0.4, 0, 0);
+    beamL.fillTriangle(-12, -35, -25, -150, 0, -150);
+    
+    const beamR = this.add.graphics();
+    beamR.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.4, 0.4, 0, 0);
+    beamR.fillTriangle(12, -35, 25, -150, 0, -150);
+
     // Draw 3D-style car using graphics
     const carBody = this.add.graphics();
     
@@ -339,6 +353,11 @@ export default class MainScene extends Phaser.Scene {
     carBody.lineStyle(3, 0x00f0ff, 1);
     carBody.strokeRoundedRect(-20, -35, 40, 70, 10);
     
+    // Headlights (Small circles)
+    carBody.fillStyle(0xffffff, 1);
+    carBody.fillCircle(-12, -32, 4);
+    carBody.fillCircle(12, -32, 4);
+
     // Energy Stripes (Yellow)
     carBody.fillStyle(0xfacc15, 0.4);
     carBody.fillRect(-10, -15, 20, 30);
@@ -347,7 +366,7 @@ export default class MainScene extends Phaser.Scene {
     carBody.fillStyle(0x222222);
     carBody.fillRoundedRect(-12, -10, 24, 25, 4);
 
-    carContainer.add(carBody);
+    carContainer.add([beamL, beamR, carBody]);
     
     // Add internal engine light - Cyan for matching
     const engineGlow = this.add.pointlight(0, 30, 0x00f0ff, 80, 0.6);

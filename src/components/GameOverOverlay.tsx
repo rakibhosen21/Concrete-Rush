@@ -10,14 +10,11 @@ interface GameOverOverlayProps {
 }
 
 export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, onRestart, onHome }) => {
+  const profile = JSON.parse(localStorage.getItem('concrete_profile') || '{}');
   const highScore = parseInt(localStorage.getItem('concrete_high_score') || '0');
   const isNewHigh = score > highScore;
   const [copied, setCopied] = useState(false);
   
-  if (isNewHigh) {
-    localStorage.setItem('concrete_high_score', score.toString());
-  }
-
   const getGrade = (s: number) => {
     if (s >= 200) return { l: 'S', d: 'NETWORK LEGEND' };
     if (s >= 101) return { l: 'A', d: 'GHOST RUNNER' };
@@ -29,7 +26,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, onResta
   const grade = getGrade(score);
 
   const handleShare = () => {
-    const text = `Protocol complete. Yield capture: ${score}. Grade: ${grade.l}. Node status: STABLE. Run concrete-rush.online`;
+    const text = `Operative ${profile.name} complete. Yield capture: ${score}. Grade: ${grade.l}. Node status: STABLE. Run concrete-rush.online`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -58,13 +55,12 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, onResta
         </div>
         
         <h2 
-          className="text-4xl font-black text-white mb-1 italic tracking-tighter uppercase relative glitch"
-          data-text="RUN TERMINATED"
+          className="text-3xl font-black text-white mb-2 italic tracking-tighter uppercase relative leading-tight"
         >
-          Run Terminated
+          Operative {profile.name} — <span className="text-yellow-400">Mission Complete</span>
         </h2>
-        <p className="text-zinc-500 mb-8 font-bold tracking-widest text-[9px] uppercase">
-          Frequency destabilized. Yield captured.
+        <p className="text-zinc-500 mb-8 font-bold tracking-[0.3em] text-[8px] uppercase">
+          Neural link stable. Yield extraction successful.
         </p>
 
         <motion.div 

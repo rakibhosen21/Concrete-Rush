@@ -100,45 +100,56 @@ export default class MenuScene extends Phaser.Scene {
         const h = Phaser.Math.Between(150, 400);
         const b = this.add.rectangle(x, y, w, h, 0x050208, 0.8);
         
-        // Glowing windows
+        // Glowing windows - crisp dots
         const g = this.add.graphics();
-        g.fillStyle(0x00f0ff, 0.4);
-        for(let r=0; r<h/30; r++) {
-            for(let c=0; c<w/20; c++) {
-                if(Math.random() > 0.7) g.fillRect(x - w/2 + 10 + c*15, y - h/2 + 10 + r*25, 6, 6);
+        for(let r=0; r<h/20; r++) {
+            for(let c=0; c<w/15; c++) {
+                if(Math.random() > 0.8) {
+                    const colors = [0xffffff, 0xfacc15, 0x00f0ff];
+                    g.fillStyle(colors[Math.floor(Math.random()*colors.length)], 0.5);
+                    g.fillRect(x - w/2 + 8 + c*12, y - h/2 + 12 + r*20, 3, 3);
+                }
             }
         }
         this.buildings.add(b);
     }
 
     private createCar(x: number, y: number) {
+        const carContainer = this.add.container(x, y);
+
+        // Headlight beams
+        const beamL = this.add.graphics();
+        beamL.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.3, 0.3, 0, 0);
+        beamL.fillTriangle(-12, -35, -20, -100, 0, -100);
+        
+        const beamR = this.add.graphics();
+        beamR.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.3, 0.3, 0, 0);
+        beamR.fillTriangle(12, -35, 20, -100, 0, -100);
+
         const carBody = this.add.graphics();
         
         // Shadow
         carBody.fillStyle(0x000000, 0.4);
         carBody.fillRoundedRect(-22, -37, 44, 74, 8);
 
-        // Body Layers (simulating 3D)
-        // Bottom layer
+        // Body Layers
         carBody.fillStyle(0x111111);
         carBody.fillRoundedRect(-20, -35, 40, 70, 10);
         
-        // Mid layer (depth)
-        carBody.fillStyle(0x222222);
-        carBody.fillRoundedRect(-18, -32, 36, 60, 8);
-        
-        // Top highlight
-        carBody.fillStyle(0x333333);
-        carBody.fillRoundedRect(-14, -28, 28, 40, 6);
-
         // Neon Accents
         carBody.lineStyle(2, 0x00f0ff, 1);
         carBody.strokeRoundedRect(-20, -35, 40, 70, 10);
+
+        // Headlights
+        carBody.fillStyle(0xffffff, 1);
+        carBody.fillCircle(-12, -32, 3);
+        carBody.fillCircle(12, -32, 3);
         
         // Engine Glow
         const glow = this.add.pointlight(0, 30, 0x00f0ff, 60, 0.5);
         
-        this.car = this.add.container(x, y, [carBody, glow]);
+        carContainer.add([beamL, beamR, carBody, glow]);
+        this.car = carContainer;
         
         // Idle animation
         this.tweens.add({

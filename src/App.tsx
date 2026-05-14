@@ -97,8 +97,23 @@ export default function App() {
     <ErrorBoundary>
       <div className="w-full h-screen bg-[#050208] text-white overflow-hidden select-none flex flex-col items-center justify-center relative">
         
-        {/* Background Decor */}
-        <div className="absolute inset-0 z-0 opacity-10 bg-grid-cyber pointer-events-none" />
+        {/* Top bar profile - always visible when active */}
+        {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && profile && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => setShowProfile(true)}
+            className="absolute top-6 left-6 z-[100] flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/10 p-2 pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group"
+          >
+            <div className="text-xl bg-yellow-400 w-10 h-10 flex items-center justify-center rounded-full text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]">
+              {profile.avatar}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-1 group-hover:text-yellow-400 transition-colors uppercase">{profile.name}</span>
+              <span className="text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none">ID: {profile.codename || 'OPERATIVE'}</span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Screen Flash Border */}
         <motion.div 
@@ -110,34 +125,9 @@ export default function App() {
         {/* Main Game Layout Container */}
         <div className="relative z-10 w-full flex items-center justify-center gap-12 px-8">
           
-          {/* Left Panel - Profile & Navigation */}
+          {/* Left Panel - Navigation */}
           {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && (
             <div className="hidden lg:flex flex-col gap-6 w-72">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-zinc-900 shadow-[0_0_30px_rgba(250,204,21,0.05)] border border-yellow-400/20 p-6 rounded-xl relative overflow-hidden group cursor-pointer"
-                onClick={() => setShowProfile(true)}
-              >
-                <div className="absolute inset-0 bg-yellow-400/0 group-hover:bg-yellow-400/5 transition-colors" />
-                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-yellow-400 mb-4 flex justify-between items-center">
-                  Operative_Status
-                  <User size={12} className="opacity-40" />
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-3xl bg-black w-14 h-14 flex items-center justify-center rounded-xl border border-white/5">
-                    {profile?.avatar || '🤖'}
-                  </div>
-                  <div>
-                    <div className="text-sm font-black italic uppercase tracking-tighter text-white">{profile?.name || 'Establishing...'}</div>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                       <span className="text-[8px] font-mono opacity-40 uppercase tracking-widest">Linked</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
               <div className="bg-zinc-900 border border-white/5 p-6 rounded-xl space-y-4">
                 <button 
                   onClick={() => setShowLeaderboard(true)}
@@ -151,7 +141,7 @@ export default function App() {
                   className="w-full bg-black/40 hover:bg-yellow-400/10 hover:border-yellow-400/30 border border-white/5 p-4 rounded-lg flex items-center gap-4 transition-all group"
                 >
                   <BarChart3 size={18} className="text-yellow-400 opacity-40 group-hover:opacity-100" />
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Operative Stats</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Dossier</span>
                 </button>
               </div>
             </div>
