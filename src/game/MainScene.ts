@@ -3,7 +3,7 @@ import { COLORS, PLAYER_CONFIG, BAG_TYPE, BAG_CONFIG } from '../constants';
 import { AudioService } from './AudioService';
 
 export default class MainScene extends Phaser.Scene {
-  private car!: Phaser.GameObjects.Container;
+  private vehicle!: Phaser.GameObjects.Container;
   private roadGroup!: Phaser.GameObjects.Group;
   private obstacles!: Phaser.Physics.Arcade.Group;
   private bags!: Phaser.Physics.Arcade.Group;
@@ -17,6 +17,7 @@ export default class MainScene extends Phaser.Scene {
   private multiplierTimer?: Phaser.Time.TimerEvent;
   private emitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private speedLines!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private trailEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private buildings!: Phaser.GameObjects.Group;
   private sideRails!: Phaser.GameObjects.Group;
   private roadGrid!: Phaser.GameObjects.Grid;
@@ -39,7 +40,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor(0x1a0b2e); // Deep purple sunset base
+    this.cameras.main.setBackgroundColor(0x050208); // Consistent dark background
     
     this.createAtmosphere();
     this.createBuildings();
@@ -50,17 +51,32 @@ export default class MainScene extends Phaser.Scene {
     this.obstacles = this.physics.add.group();
     this.bags = this.physics.add.group();
 
-    // Speed Lines - Improved for visibility
+    // Cinematic Camera Setup
+    this.cameras.main.setLerp(0.1, 0.1);
+    this.cameras.main.zoom = 1.05;
+
+    // Light Trails for the bike - more subtle
+    this.trailEmitter = this.add.particles(0, 0, 'light-trail', {
+      scale: { start: 0.8, end: 0 },
+      alpha: { start: 0.2, end: 0 },
+      lifespan: 200,
+      blendMode: 'ADD',
+      frequency: 30,
+      follow: this.vehicle,
+      followOffset: { x: 0, y: 30 }
+    }).setDepth(5);
+
+    // Speed Lines - Subdued for cinematic focus
     this.speedLines = this.add.particles(0, 0, 'speed-line', {
       x: () => Math.random() * this.scale.width,
       y: -50,
       lifespan: 400,
-      speedY: { min: 1000, max: 2500 },
-      scaleY: { start: 1, end: 2 },
-      scaleX: 1,
-      alpha: { start: 0.2, end: 0 },
+      speedY: { min: 800, max: 2000 },
+      scaleY: { start: 0.5, end: 1.5 },
+      scaleX: 0.4,
+      alpha: { start: 0.05, end: 0 },
       blendMode: 'ADD',
-      frequency: 80
+      frequency: 250
     });
 
     // Particle Emitter for collections
@@ -90,28 +106,26 @@ export default class MainScene extends Phaser.Scene {
     AudioService.startEngine();
 
     // Collision
-    this.physics.add.overlap(this.car, this.obstacles, this.handleObstacleCollision, undefined, this);
-    this.physics.add.overlap(this.car, this.bags, this.handleBagCollision, undefined, this);
+    this.physics.add.overlap(this.vehicle, this.obstacles, this.handleObstacleCollision, undefined, this);
+    this.physics.add.overlap(this.vehicle, this.bags, this.handleBagCollision, undefined, this);
 
     // Initial Layout Setup
     this.handleResize({ width: this.scale.width, height: this.scale.height });
   }
 
   private createAtmosphere() {
-    // Brighter Sunset Gradient
-    const width = 2000; // Large enough for resizing
+    // Smoother, cleaner atmosphere
+    const width = 2000;
     const height = 1200;
     const rt = this.add.renderTexture(0, 0, width, height).setScrollFactor(0).setDepth(-10);
     
-    // Draw sky gradient
     const sky = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    sky.fillGradientStyle(0xff7b00, 0xff7b00, 0x7b1fa2, 0x7b1fa2, 1);
+    sky.fillGradientStyle(0x7b1fa2, 0x7b1fa2, 0x050208, 0x050208, 1);
     sky.fillRect(0, 0, width, height);
     rt.draw(sky);
 
-    // Sun
-    this.add.circle(100, 100, 80, 0xffff00, 0.2).setScrollFactor(0.01).setDepth(-9).setBlendMode('ADD');
-    this.add.circle(100, 100, 40, 0xffffff, 0.8).setScrollFactor(0.01).setDepth(-9);
+    // Static sun - removed overactive glow
+    this.add.circle(100, 100, 40, 0xffffff, 0.4).setScrollFactor(0.01).setDepth(-9);
   }
 
   private createBuildings() {
@@ -193,9 +207,9 @@ export default class MainScene extends Phaser.Scene {
         this.roadGrid.cellWidth = roadWidth / 3;
     }
 
-    // Reposition Car
-    this.car.y = height * 0.85;
-    this.car.x = this.getLaneX(this.currentLane);
+    // Reposition Vehicle
+    this.vehicle.y = height * 0.82;
+    this.vehicle.x = this.getLaneX(this.currentLane);
     
     // Update Speed Lines Area
     this.speedLines.setPosition(0, 0);
@@ -218,42 +232,52 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createTextures() {
-    // Player Car Texture (Cyberpunk detailed)
-    const carGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    // Player Cyber Bike Texture
+    const bikeGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
     
-    // Main body shadow
-    carGraphics.fillStyle(0x000000, 0.5);
-    carGraphics.fillRoundedRect(4, 4, 40, 70, 8);
-    
-    // Main body
-    carGraphics.fillStyle(0x111111);
-    carGraphics.fillRoundedRect(0, 0, 40, 70, 10);
-    
-    // Neon Outline
-    carGraphics.lineStyle(3, 0xfacc15, 1);
-    carGraphics.strokeRoundedRect(0, 0, 40, 70, 10);
-    
-    // Energy core / stripes
-    carGraphics.fillStyle(0xfacc15, 0.3);
-    carGraphics.fillRect(10, 15, 20, 40);
-    carGraphics.lineStyle(1, 0xfacc15, 0.5);
-    carGraphics.strokeRect(10, 15, 20, 40);
+    // Bike Shadow (Procedural texture for sharp contrast)
+    const shadowGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    shadowGraphics.fillStyle(0x000000, 0.4);
+    shadowGraphics.fillEllipse(15, 60, 30, 20);
+    shadowGraphics.generateTexture('bike-shadow', 30, 80);
 
-    // Cockpit
-    carGraphics.fillStyle(0x222222);
-    carGraphics.fillRoundedRect(8, 20, 24, 25, 4);
+    // Main Chassis - Darker, sharper base
+    bikeGraphics.fillStyle(0x0a0a0a);
+    bikeGraphics.fillRoundedRect(0, 0, 24, 80, 12);
     
-    // Headlights (Glowing)
-    carGraphics.fillStyle(0xffffff, 1);
-    carGraphics.fillCircle(8, 8, 5);
-    carGraphics.fillCircle(32, 8, 5);
-    
-    // Rear Thrusters
-    carGraphics.fillStyle(0x3b82f6, 0.8);
-    carGraphics.fillRect(5, 68, 8, 4);
-    carGraphics.fillRect(27, 68, 8, 4);
+    // Rim Lighting - Subtle blue edge highlight for separation
+    bikeGraphics.lineStyle(1, 0x00f0ff, 0.3);
+    bikeGraphics.strokeRoundedRect(0, 0, 24, 80, 12);
 
-    carGraphics.generateTexture('player-car', 40, 75);
+    // Mechanical Depth Lines
+    bikeGraphics.lineStyle(1, 0x222222, 1);
+    bikeGraphics.lineBetween(12, 10, 12, 70);
+    bikeGraphics.strokeRect(4, 30, 16, 20);
+
+    // Accent LEDs - Sharper, less glowy
+    bikeGraphics.fillStyle(0xfacc15, 0.9);
+    bikeGraphics.fillRect(2, 25, 2, 30); // Left 
+    bikeGraphics.fillRect(20, 25, 2, 30); // Right
+
+    // Engine Core - Reduced brightness
+    bikeGraphics.fillStyle(0x00f0ff, 0.4);
+    bikeGraphics.fillCircle(12, 50, 6);
+    
+    // Front Shield / Cockpit - Slightly translucent
+    bikeGraphics.fillStyle(0x1a1a1a, 0.95);
+    bikeGraphics.fillRoundedRect(4, 5, 16, 25, 8);
+    
+    // Headlight - Clean white
+    bikeGraphics.fillStyle(0xffffff, 1);
+    bikeGraphics.fillCircle(12, 6, 3);
+
+    bikeGraphics.generateTexture('player-bike', 24, 80);
+
+    // Light Trail Particle Texture
+    const trailGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    trailGraphics.fillStyle(0x00f0ff, 0.8);
+    trailGraphics.fillRect(0, 0, 4, 4);
+    trailGraphics.generateTexture('light-trail', 4, 4);
 
     // Obstacle Texture (Cyber Truck / Tanker)
     const obstacleGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
@@ -327,61 +351,48 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createPlayer() {
-    const carContainer = this.add.container(0, 0);
+    const bikeContainer = this.add.container(0, 0);
     
-    // Headlight beams
-    const beamL = this.add.graphics();
-    beamL.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.4, 0.4, 0, 0);
-    beamL.fillTriangle(-12, -35, -25, -150, 0, -150);
+    // Main beam - Lower alpha for clarity
+    const beam = this.add.graphics();
+    beam.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.15, 0.15, 0, 0);
+    beam.fillTriangle(-20, -150, 0, -30, 20, -150);
     
-    const beamR = this.add.graphics();
-    beamR.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.4, 0.4, 0, 0);
-    beamR.fillTriangle(12, -35, 25, -150, 0, -150);
+    // Shadow under bike
+    const shadow = this.add.image(0, 10, 'bike-shadow').setAlpha(0.5);
 
-    // Draw 3D-style car using graphics
-    const carBody = this.add.graphics();
+    // Bike Visuals
+    const bikeSprite = this.add.image(0, 0, 'player-bike');
     
-    // Bottom Layer (Shadow/Base)
-    carBody.fillStyle(0x000000, 0.4);
-    carBody.fillRoundedRect(-22, -37, 44, 74, 8);
-
-    // Deep Body
-    carBody.fillStyle(0x111111);
-    carBody.fillRoundedRect(-20, -35, 40, 70, 10);
+    // Rim highlight (Extra sharp layer)
+    const accents = this.add.graphics();
+    accents.lineStyle(1, 0x00f0ff, 0.2);
+    accents.strokeRoundedRect(-12, -40, 24, 80, 12);
     
-    // Cyan Neon Outline
-    carBody.lineStyle(3, 0x00f0ff, 1);
-    carBody.strokeRoundedRect(-20, -35, 40, 70, 10);
-    
-    // Headlights (Small circles)
-    carBody.fillStyle(0xffffff, 1);
-    carBody.fillCircle(-12, -32, 4);
-    carBody.fillCircle(12, -32, 4);
-
-    // Energy Stripes (Yellow)
-    carBody.fillStyle(0xfacc15, 0.4);
-    carBody.fillRect(-10, -15, 20, 30);
-    
-    // Cockpit
-    carBody.fillStyle(0x222222);
-    carBody.fillRoundedRect(-12, -10, 24, 25, 4);
-
-    carContainer.add([beamL, beamR, carBody]);
-    
-    // Add internal engine light - Cyan for matching
-    const engineGlow = this.add.pointlight(0, 30, 0x00f0ff, 80, 0.6);
-    carContainer.add(engineGlow);
-    
-    this.car = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [carContainer]);
-    this.car.setSize(40, 75);
-    this.physics.world.enable(this.car);
-    (this.car.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
-    
-    // Hover animation
+    // Engine Glow - Sharply reduced radius and intensity
+    const glow = this.add.pointlight(0, 10, 0x00f0ff, 60, 0.4);
     this.tweens.add({
-        targets: carContainer,
-        y: -6,
-        duration: 1200,
+        targets: glow,
+        intensity: 0.2,
+        radius: 40,
+        duration: 800,
+        yoyo: true,
+        repeat: -1
+    });
+
+    bikeContainer.add([beam, shadow, bikeSprite, accents, glow]);
+    
+    this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.82, [bikeContainer]);
+    this.vehicle.setSize(30, 80);
+    this.physics.world.enable(this.vehicle);
+    (this.vehicle.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
+    
+    // Floating motion - Subdued for focus
+    this.tweens.add({
+        targets: bikeContainer,
+        y: -3,
+        x: { from: -1, to: 1 },
+        duration: 1500,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
@@ -400,17 +411,21 @@ export default class MainScene extends Phaser.Scene {
       this.currentLane = nextLane;
       
       this.tweens.add({
-        targets: this.car,
+        targets: this.vehicle,
         x: this.getLaneX(this.currentLane),
-        duration: 200,
+        duration: 250,
         ease: 'Cubic.easeOut',
         onUpdate: () => {
-          const progress = this.tweens.getTweensOf(this.car)[0].progress;
-          const tilt = (nextLane - prevLane) * 12 * Math.sin(progress * Math.PI);
-          this.car.setAngle(tilt);
+          const progress = this.tweens.getTweensOf(this.vehicle)[0].progress;
+          // Smooth leaning animation for bike
+          const tilt = (nextLane - prevLane) * 15 * Math.sin(progress * Math.PI);
+          this.vehicle.setAngle(tilt);
+          // Subtle squash and stretch for juice
+          this.vehicle.setScale(1 - Math.abs(tilt) * 0.01, 1 + Math.abs(tilt) * 0.01);
         },
         onComplete: () => {
-          this.car.setAngle(0);
+          this.vehicle.setAngle(0);
+          this.vehicle.setScale(1);
         }
       });
     }
@@ -538,7 +553,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private showComboFloat() {
-    const float = this.add.text(this.car.x, this.car.y - 60, "+COMBO!", {
+    const float = this.add.text(this.vehicle.x, this.vehicle.y - 60, "+COMBO!", {
         fontFamily: 'Inter, sans-serif',
         fontSize: '32px',
         color: '#facc15',
@@ -607,14 +622,14 @@ export default class MainScene extends Phaser.Scene {
     this.speedMeter.strokeRoundedRect(x, y, meterWidth, meterHeight, 2);
   }
 
-  update() {
+  update(time: number, delta: number) {
     if (this.isPaused) return;
 
     this.drawSpeedMeter();
-    const scrollSpeed = this.speed / 60;
+    const scrollSpeed = (this.speed * delta) / 1000;
     const limitY = this.scale.height + 100;
 
-    // Optimized Scrolling
+    // Frame-rate independent scrolling for perfect smoothness
     this.roadGroup.getChildren().forEach((line: any) => {
       line.y += scrollSpeed;
       if (line.y > limitY) line.y = -100;

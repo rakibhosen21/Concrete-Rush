@@ -102,16 +102,34 @@ export default function App() {
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            onClick={() => setShowProfile(true)}
-            className="absolute top-4 sm:top-6 left-4 sm:left-6 z-[100] flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-md border border-white/10 p-1.5 pr-3 sm:p-2 sm:pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group max-w-[calc(100vw-2rem)]"
+            className="absolute top-0 left-0 right-0 z-[100] p-4 flex items-center justify-between pointer-events-none"
           >
-            <div className="text-sm sm:text-xl bg-yellow-400 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-black shadow-[0_0_15px_rgba(250,204,21,0.3)] shrink-0">
-              {profile.avatar}
+            <div 
+              onClick={() => setShowProfile(true)}
+              className="flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl border border-white/5 p-1 sm:p-1.5 pr-3 sm:pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group pointer-events-auto shadow-2xl"
+            >
+              <div className="text-sm sm:text-lg bg-zinc-800 w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-white shrink-0 group-hover:bg-yellow-400 group-hover:text-black transition-colors">
+                {profile.avatar}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-0.5 group-hover:text-yellow-400 transition-colors truncate">{profile.name}</span>
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="text-[6px] sm:text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none truncate">SYNC_ACTIVE</span>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col min-w-0 pr-1">
-              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-0.5 sm:mb-1 group-hover:text-yellow-400 transition-colors uppercase truncate">{profile.name}</span>
-              <span className="text-[6px] sm:text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none truncate overflow-hidden">ID: {profile.codename || 'OPERATIVE'}</span>
-            </div>
+
+            {gameState === 'PLAYING' && (
+              <div className="lg:hidden flex items-center gap-3">
+                <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
+                  <span className="text-[10px] font-mono text-yellow-400 tabular-nums">X{multiplier.toFixed(1)}</span>
+                </div>
+                <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
+                  <span className="text-[10px] font-mono text-white tabular-nums">{score.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 

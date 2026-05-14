@@ -37,10 +37,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
     <div className="min-h-screen bg-transparent text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
       {/* Immersive Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60 pointer-events-none z-0" />
-      <div className="scanline z-10" />
       
-      {/* Radial Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-yellow-500/5 blur-[100px] rounded-full pointer-events-none z-0" />
+      {/* Radial Glow - Subtle */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-400/5 blur-[120px] rounded-full pointer-events-none z-0" />
  
       <nav className="relative z-10 px-4 sm:px-8 py-4 sm:py-6 flex justify-between items-center max-w-7xl mx-auto w-full pointer-events-auto">
         <motion.div 
@@ -55,11 +54,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
         <motion.div 
           initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
-          className="hidden sm:flex items-center gap-4 md:gap-8 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.3em] text-zinc-500"
+          className="hidden sm:flex items-center gap-4 md:gap-8 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.3em] text-zinc-600"
         >
           <div className="flex items-center gap-2 group cursor-pointer">
-            <div className="w-1 h-1 rounded-full bg-green-500" />
-            <span className="group-hover:text-yellow-400 transition-colors tracking-widest uppercase">Node_Stable</span>
+            <div className="w-1 h-1 rounded-full bg-cyan-500/40" />
+            <span className="group-hover:text-yellow-400 transition-colors tracking-widest uppercase">Node_Connected</span>
           </div>
         </motion.div>
       </nav>
@@ -69,11 +68,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
           style={{ rotateX, rotateY, perspective: 800 }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
+          transition={{ duration: 1.5 }}
           className="relative mb-12 sm:mb-20 scale-90 sm:scale-100"
         >
           {/* Main Hero Logo Area */}
-          <Logo />
+          <div className="relative group p-8">
+            <Logo />
+            <div className="shimmer opacity-20" />
+          </div>
         </motion.div>
 
         <motion.div 
@@ -87,13 +89,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
               onClick={onStart}
               onMouseEnter={() => setIsHovering(true)}
               onMouseLeave={() => setIsHovering(false)}
-              animate={{ 
-                boxShadow: ["0 0 20px rgba(0, 240, 255, 0.2)", "0 0 40px rgba(0, 240, 255, 0.5)", "0 0 20px rgba(0, 240, 255, 0.2)"]
-              }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-              className="skew-btn px-10 sm:px-20 py-5 sm:py-8 bg-yellow-400 text-black font-black uppercase italic tracking-[0.2em] sm:tracking-[0.3em] text-lg sm:text-2xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative border-2 border-transparent hover:border-[#00f0ff]"
+              className="skew-btn px-10 sm:px-20 py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative"
             >
-              <span>Initialize Engine</span>
+              <span className="relative z-10">Initialize Engine</span>
             </motion.button>
             <div className={`absolute -inset-4 bg-yellow-400/5 blur-2xl rounded-full -z-10 transition-opacity duration-300 ${isHovering ? 'opacity-100' : 'opacity-0'}`} />
           </div>

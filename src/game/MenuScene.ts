@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 
 export default class MenuScene extends Phaser.Scene {
-    private car!: Phaser.GameObjects.Container;
+    private bike!: Phaser.GameObjects.Container;
     private roadGroup!: Phaser.GameObjects.Group;
     private buildings!: Phaser.GameObjects.Group;
     private speed = 400;
@@ -56,26 +56,26 @@ export default class MenuScene extends Phaser.Scene {
         // Road Grid
         this.add.grid(centerX, height/2, roadWidth, height, roadWidth/3, 80, 0, 0, 0x00f0ff, 0.1);
 
-        // Animated Lane Lines
+        // moving road lines - Subdued
         this.roadGroup = this.add.group();
         for (let i = 0; i < 10; i++) {
-            const line = this.add.rectangle(centerX, i * 100, 2, 40, 0xffffff, 0.2);
+            const line = this.add.rectangle(centerX, i * 100, 2, 40, 0xffffff, 0.1);
             this.roadGroup.add(line);
         }
 
-        // 3D-ish Car Primitive
-        this.createCar(centerX, height * 0.8);
-
-        // Subtle Particles
+        // Subdued Cinematic Atmosphere
         this.add.particles(centerX, height * 0.82, 'bag-YELLOW', {
-            speedX: { min: -20, max: 20 },
-            speedY: 100,
-            scale: { start: 0.2, end: 0 },
-            alpha: { start: 0.4, end: 0 },
+            speedX: { min: -10, max: 10 },
+            speedY: 80,
+            scale: { start: 0.1, end: 0 },
+            alpha: { start: 0.3, end: 0 },
             lifespan: 1000,
-            frequency: 100,
+            frequency: 200,
             blendMode: 'ADD'
         });
+
+        // 3D-ish Bike Primitive
+        this.createBike(centerX, height * 0.8);
 
         // Floating Pixel Particles for ambiance
         const pixels = this.add.graphics();
@@ -114,64 +114,72 @@ export default class MenuScene extends Phaser.Scene {
         this.buildings.add(b);
     }
 
-    private createCar(x: number, y: number) {
-        const carContainer = this.add.container(x, y);
+    private createBike(x: number, y: number) {
+        const bikeContainer = this.add.container(x, y);
 
-        // Headlight beams
-        const beamL = this.add.graphics();
-        beamL.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.3, 0.3, 0, 0);
-        beamL.fillTriangle(-12, -35, -20, -100, 0, -100);
-        
-        const beamR = this.add.graphics();
-        beamR.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.3, 0.3, 0, 0);
-        beamR.fillTriangle(12, -35, 20, -100, 0, -100);
+        // Headlight beam - Subtle
+        const beam = this.add.graphics();
+        beam.fillGradientStyle(0xffffff, 0xffffff, 0xffffff, 0xffffff, 0.1, 0.1, 0, 0);
+        beam.fillTriangle(-15, -120, 0, -30, 15, -120);
 
-        const carBody = this.add.graphics();
+        const body = this.add.graphics();
         
-        // Shadow
-        carBody.fillStyle(0x000000, 0.4);
-        carBody.fillRoundedRect(-22, -37, 44, 74, 8);
+        // Shadow under bike for depth
+        const shadow = this.add.graphics();
+        shadow.fillStyle(0x000000, 0.3);
+        shadow.fillEllipse(0, 45, 30, 20);
 
-        // Body Layers
-        carBody.fillStyle(0x111111);
-        carBody.fillRoundedRect(-20, -35, 40, 70, 10);
+        // Chassis - Dark & Sharp
+        body.fillStyle(0x0a0a0a);
+        body.fillRoundedRect(-12, -40, 24, 80, 10);
         
-        // Neon Accents
-        carBody.lineStyle(2, 0x00f0ff, 1);
-        carBody.strokeRoundedRect(-20, -35, 40, 70, 10);
+        // Rim highlight
+        body.lineStyle(1, 0x00f0ff, 0.2);
+        body.strokeRoundedRect(-12, -40, 24, 80, 10);
 
-        // Headlights
-        carBody.fillStyle(0xffffff, 1);
-        carBody.fillCircle(-12, -32, 3);
-        carBody.fillCircle(12, -32, 3);
+        // Mechanical detail
+        body.lineStyle(1, 0x222222, 1);
+        body.lineBetween(0, -30, 0, 30);
+
+        // Neon Accents - Defined
+        body.fillStyle(0xfacc15, 0.8);
+        body.fillRect(-10, -15, 2, 30);
+        body.fillRect(8, -15, 2, 30);
+
+        // Cockpit
+        body.fillStyle(0x1a1a1a);
+        body.fillRoundedRect(-8, -35, 16, 25, 6);
         
-        // Engine Glow
-        const glow = this.add.pointlight(0, 30, 0x00f0ff, 60, 0.5);
+        // Engine Glow - Balanced
+        const glow = this.add.pointlight(0, 10, 0x00f0ff, 50, 0.3);
         
-        carContainer.add([beamL, beamR, carBody, glow]);
-        this.car = carContainer;
+        bikeContainer.add([shadow, beam, body, glow]);
+        this.bike = bikeContainer;
         
         // Idle animation
         this.tweens.add({
-            targets: this.car,
-            y: y - 4,
-            duration: 1000,
+            targets: this.bike,
+            y: y - 3,
+            duration: 1500,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
     }
 
-    update() {
+    update(time: number, delta: number) {
+        const scrollSpeed = (this.speed * delta) / 1000;
+        const parallaxSpeed = (0.5 * delta) / 16.67; // Approx original speed
+
         // Road scroll
         this.roadGroup.getChildren().forEach((line: any) => {
-            line.y += this.speed / 60;
+            line.y += scrollSpeed;
             if (line.y > this.scale.height + 50) line.y = -50;
         });
 
         // Building scroll (parallax)
         this.buildings.getChildren().forEach((b: any) => {
-             b.y += 0.5;
+             b.y += parallaxSpeed;
              if (b.y > this.scale.height + 200) b.y = -200;
         });
     }
