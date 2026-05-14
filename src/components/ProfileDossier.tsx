@@ -53,10 +53,13 @@ export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset
                 </div>
                 <div className="min-w-0 overflow-hidden">
                    <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-yellow-400 mb-1 sm:mb-2 leading-none uppercase truncate">Classified_Access_Dossier</div>
-                   <h2 className="text-2xl sm:text-4xl font-black italic text-white tracking-tighter uppercase leading-none mb-2 sm:mb-3 truncate">{profile.name}</h2>
-                   <div className="flex items-center justify-center sm:justify-start gap-3">
-                      <span className="text-[8px] sm:text-[10px] font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-0.5 rounded border border-white/5 truncate">Role: {profile.codename || 'AGENT'}</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                   <h2 className="text-2xl sm:text-4xl font-black italic text-white tracking-tighter uppercase leading-none mb-1 sm:mb-2 truncate">{profile.displayName || profile.name}</h2>
+                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2">
+                      <span className="text-[10px] sm:text-sm font-mono text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-0.5 rounded border border-white/5 truncate">@{profile.username || profile.codename || 'AGENT'}</span>
+                      <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                         <span className="text-[8px] sm:text-[10px] font-mono text-zinc-400/40 uppercase tracking-widest leading-none">Status: Operational</span>
+                      </div>
                    </div>
                 </div>
              </div>
@@ -73,9 +76,9 @@ export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset
                 </div>
                 <div>
                    <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
-                     <div className="w-2 h-0.5 bg-yellow-400" /> Best_Grade_Achieved
+                     <div className="w-2 h-0.5 bg-yellow-400" /> Best_Distance_M
                    </div>
-                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-yellow-400">GRADE_{bestGrade}</div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{(profile.bestDistance || 0).toLocaleString()}</div>
                 </div>
              </div>
 

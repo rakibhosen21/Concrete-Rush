@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Shield, ChevronRight, Terminal } from 'lucide-react';
 
 interface ProfileSetupProps {
-  onComplete: (profile: { name: string; avatar: string; codename: string }) => void;
+  onComplete: (profile: { displayName: string; username: string; avatar: string; avatarCodename: string }) => void;
 }
 
 const AVATAR_DATA = [
@@ -16,7 +16,8 @@ const AVATAR_DATA = [
 ];
 
 export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
-  const [name, setName] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_DATA[0]);
   const [terminalText, setTerminalText] = useState('');
   const [step, setStep] = useState(0);
@@ -38,11 +39,12 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim().length >= 3) {
+    if (displayName.trim().length >= 3 && username.trim().length >= 3) {
       onComplete({ 
-        name: name.trim().toUpperCase(), 
+        displayName: displayName.trim().toUpperCase(), 
+        username: username.trim().toLowerCase().replace(/\s+/g, '_'),
         avatar: selectedAvatar.icon,
-        codename: selectedAvatar.codename
+        avatarCodename: selectedAvatar.codename
       });
     }
   };
@@ -83,29 +85,44 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6 sm:space-y-10"
+                className="space-y-6"
               >
-                <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-10">
-                  <div className="relative">
-                    <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-green-500/50 mb-2 sm:mb-3 ml-1">Establish_Codename</label>
-                    <input 
-                      type="text" 
-                      maxLength={16}
-                      value={name}
-                      onChange={(e) => setName(e.target.value.toUpperCase())}
-                      placeholder="ENTER OPERATIVE NAME..."
-                      className="w-full bg-black/60 border border-green-500/20 rounded-lg px-4 py-3 sm:px-6 sm:py-5 text-green-500 font-mono text-sm sm:text-xl focus:border-green-400 outline-none transition-all placeholder:text-green-900 shadow-inner"
-                      required
-                    />
-                    {name.length > 0 && name.length < 3 && (
-                      <div className="absolute -bottom-5 sm:-bottom-6 left-0 text-[7px] sm:text-[9px] text-red-500 uppercase tracking-widest animate-pulse">
-                        Identity Unverified — Enter Codename (Min 3 Chars)
-                      </div>
-                    )}
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="relative">
+                      <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-green-500/50 mb-2 ml-1 text-left">Display_Name</label>
+                      <input 
+                        type="text" 
+                        maxLength={16}
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value.toUpperCase())}
+                        placeholder="ENTER NAME..."
+                        className="w-full bg-black/60 border border-green-500/20 rounded-lg px-4 py-3 text-green-500 font-mono text-sm sm:text-base focus:border-green-400 outline-none transition-all placeholder:text-green-900 shadow-inner"
+                        required
+                      />
+                    </div>
+                    <div className="relative">
+                      <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-green-500/50 mb-2 ml-1 text-left">Internal_Username @</label>
+                      <input 
+                        type="text" 
+                        maxLength={16}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                        placeholder="USERNAME..."
+                        className="w-full bg-black/60 border border-green-500/20 rounded-lg px-4 py-3 text-green-500 font-mono text-sm sm:text-base focus:border-green-400 outline-none transition-all placeholder:text-green-900 shadow-inner"
+                        required
+                      />
+                    </div>
                   </div>
 
+                  {((displayName.length > 0 && displayName.length < 3) || (username.length > 0 && username.length < 3)) && (
+                    <div className="text-[7px] sm:text-[9px] text-red-500 uppercase tracking-widest animate-pulse text-left">
+                      Identity Unverified — Fields must be at least 3 characters.
+                    </div>
+                  )}
+
                   <div>
-                    <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-green-500/50 mb-3 sm:mb-4 ml-1">Identity_Avatar_Select</label>
+                    <label className="block text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-green-500/50 mb-3 ml-1 text-left">Neural_Avatar_Select</label>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4">
                       {AVATAR_DATA.map(av => (
                         <button
@@ -131,12 +148,12 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete }) => {
 
                   <button
                     type="submit"
-                    disabled={name.trim().length < 3}
+                    disabled={displayName.trim().length < 3 || username.trim().length < 3}
                     className="skew-btn w-full bg-yellow-400 disabled:opacity-30 disabled:grayscale text-black font-black py-4 sm:py-6 uppercase italic tracking-[0.2em] sm:tracking-[0.3em] text-lg sm:text-xl group relative overflow-hidden transition-all active:scale-95"
                   >
                     <div className="absolute inset-0 bg-white/20 translate-x-full group-hover:-translate-x-full transition-transform duration-500 skew-x-12" />
                     <span className="flex items-center justify-center gap-4 relative z-10">
-                      Confirm Identity <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
+                      Sync Profile <ChevronRight size={18} className="sm:w-[20px] sm:h-[20px]" />
                     </span>
                   </button>
                 </form>

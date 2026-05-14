@@ -10,7 +10,10 @@ export default class MainScene extends Phaser.Scene {
   
   private speed = 600;
   private score = 0;
+  private distance = 0;
   private health = PLAYER_CONFIG.HEALTH;
+  private maxMultiplier = 1;
+
   private currentLane = 1; // 0, 1, 2
   private isPaused = false;
   private multiplierActive = false;
@@ -18,8 +21,8 @@ export default class MainScene extends Phaser.Scene {
   private emitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private speedLines!: Phaser.GameObjects.Particles.ParticleEmitter;
   private trailEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
-  private buildings!: Phaser.GameObjects.Group;
-  private sideRails!: Phaser.GameObjects.Group;
+  private sceneryGroup!: Phaser.GameObjects.Group;
+  private clouds!: Phaser.GameObjects.Group;
   private roadGrid!: Phaser.GameObjects.Grid;
   private speedMeter!: Phaser.GameObjects.Graphics;
   private roads: Phaser.GameObjects.Rectangle[] = [];
@@ -40,10 +43,10 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor(0x050208); // Consistent dark background
+    this.cameras.main.setBackgroundColor(0x87ceeb); // Sky blue base
     
     this.createAtmosphere();
-    this.createBuildings();
+    this.createScenery();
     this.createRoad();
     this.createTextures();
     this.createPlayer();
@@ -114,48 +117,64 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createAtmosphere() {
-    // Smoother, cleaner atmosphere
+    // Cinematic Sky Gradient (Professional Blue to soft Horizon)
     const width = 2000;
     const height = 1200;
     const rt = this.add.renderTexture(0, 0, width, height).setScrollFactor(0).setDepth(-10);
     
     const sky = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    sky.fillGradientStyle(0x7b1fa2, 0x7b1fa2, 0x050208, 0x050208, 1);
+    // Gradient from deep sky blue to light sapphire
+    sky.fillGradientStyle(0x1a4a6e, 0x1a4a6e, 0x4a90e2, 0x4a90e2, 1);
     sky.fillRect(0, 0, width, height);
     rt.draw(sky);
 
-    // Static sun - removed overactive glow
-    this.add.circle(100, 100, 40, 0xffffff, 0.4).setScrollFactor(0.01).setDepth(-9);
+    // Cinematic Sun Glow (Distanced and soft)
+    const sunGlow = this.add.pointlight(width * 0.15, 120, 0xffe5b4, 350, 0.25).setScrollFactor(0.01).setDepth(-9);
+    const sun = this.add.circle(width * 0.15, 120, 35, 0xffffff, 0.95).setScrollFactor(0.01).setDepth(-9);
+    
+    // Horizon Fog / Distance Blur
+    const horizonFog = this.add.graphics();
+    horizonFog.fillGradientStyle(0x4a90e2, 0x4a90e2, 0x000000, 0x000000, 0.4, 0.4, 0, 0).setDepth(-6).setScrollFactor(0);
+    horizonFog.fillRect(0, 0, width, 400);
+
+    this.tweens.add({
+        targets: [sun, sunGlow],
+        y: 115,
+        duration: 5000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
+
+    // Substrate Ambient Day Clouds
+    this.clouds = this.add.group();
+    for(let i=0; i<8; i++) {
+        const cx = Math.random() * 2000;
+        const cy = 50 + Math.random() * 200;
+        const cloud = this.add.image(cx, cy, 'cloud').setScrollFactor(0.02).setDepth(-8).setAlpha(0.2).setScale(0.8 + Math.random());
+        this.clouds.add(cloud);
+    }
   }
 
-  private createBuildings() {
-    this.buildings = this.add.group();
-    const count = 15;
+  private createScenery() {
+    this.sceneryGroup = this.add.group();
+    const count = 24;
     for (let i = 0; i < count; i++) {
-        const x = Phaser.Math.Between(0, 1200);
-        const w = Phaser.Math.Between(80, 200);
-        const h = Phaser.Math.Between(200, 600);
-        const building = this.add.rectangle(x, 600 - h/2, w, h, 0x0a0515, 0.9).setScrollFactor(0.05).setDepth(-8);
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const roadWidth = 600;
+        const x = (this.scale.width / 2) + (side * (roadWidth/2 + 120 + Math.random() * 500));
+        const y = Math.random() * this.scale.height;
         
-        // Add windows - More crisp dots
-        const graphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-        graphics.fillStyle(0xffffff, 0.6);
-        for(let row=0; row<h/20; row++) {
-            for(let col=0; col<w/15; col++) {
-                if(Math.random() > 0.8) {
-                    // Random yellow/cyan/white windows
-                    const colors = [0xffffff, 0xfacc15, 0x00f0ff];
-                    graphics.fillStyle(colors[Math.floor(Math.random()*colors.length)], 0.6);
-                    graphics.fillRect(8 + col*12, 12 + row*18, 4, 4);
-                }
-            }
+        const type = Math.random() > 0.7 ? 'tree-large' : 'tree-small';
+        const tree = this.add.image(x, y, type).setDepth(-7).setScale(1.2 + Math.random() * 0.5);
+        tree.setData('speed', 0.15 + Math.random() * 0.25);
+        this.sceneryGroup.add(tree);
+        
+        if (Math.random() > 0.4) {
+            const grass = this.add.image(x + (Math.random()-0.5)*80, y + (Math.random()-0.5)*80, 'grass').setDepth(-8).setScale(0.7 + Math.random()*0.8);
+            grass.setData('speed', tree.getData('speed'));
+            this.sceneryGroup.add(grass);
         }
-        const winTex = `win-${i}`;
-        graphics.generateTexture(winTex, w, h);
-        const windows = this.add.image(x, 600 - h/2, winTex).setScrollFactor(0.05).setDepth(-7).setAlpha(0.6);
-        
-        this.buildings.add(building);
-        this.buildings.add(windows);
     }
   }
 
@@ -314,37 +333,85 @@ export default class MainScene extends Phaser.Scene {
       bagGraphics.generateTexture(`bag-${type}`, 40, 40);
     });
 
-    // Speed Line Texture
+    // Speed Line Texture - Golden Sunlight Streaks
     const slGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    slGraphics.fillStyle(0xffffff, 0.3);
+    slGraphics.fillStyle(0xffd700, 0.15);
     slGraphics.fillRect(0, 0, 2, 60);
     slGraphics.generateTexture('speed-line', 2, 60);
+
+    // Nature Textures
+    const natureGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    
+    // Cloud
+    natureGraphics.clear();
+    natureGraphics.fillStyle(0xffffff, 0.8);
+    natureGraphics.fillCircle(20, 20, 20);
+    natureGraphics.fillCircle(40, 25, 25);
+    natureGraphics.fillCircle(65, 20, 20);
+    natureGraphics.generateTexture('cloud', 85, 50);
+
+    // Tree Large
+    natureGraphics.clear();
+    natureGraphics.fillStyle(0x3e2723); // trunk
+    natureGraphics.fillRect(8, 20, 6, 20);
+    natureGraphics.fillStyle(0x1b5e20); // main leaves
+    natureGraphics.fillTriangle(11, 0, 0, 25, 22, 25);
+    natureGraphics.fillStyle(0x2e7d32); // mid layer
+    natureGraphics.fillTriangle(11, 8, 2, 28, 20, 28);
+    natureGraphics.generateTexture('tree-large', 22, 45);
+
+    // Tree Small
+    natureGraphics.clear();
+    natureGraphics.fillStyle(0x2e7d32);
+    natureGraphics.fillCircle(12, 10, 12);
+    natureGraphics.fillStyle(0x3e2723);
+    natureGraphics.fillRect(10, 18, 4, 12);
+    natureGraphics.generateTexture('tree-small', 24, 30);
+
+    // Grass
+    natureGraphics.clear();
+    natureGraphics.fillStyle(0x2e7d32, 0.8);
+    natureGraphics.fillRect(0, 10, 18, 2);
+    natureGraphics.fillRect(2, 2, 2, 10);
+    natureGraphics.fillRect(8, 0, 2, 12);
+    natureGraphics.fillRect(14, 4, 2, 8);
+    natureGraphics.generateTexture('grass', 18, 12);
   }
 
   private createRoad() {
     const centerX = this.scale.width / 2;
     const roadWidth = Math.min(this.scale.width * 0.9, 600);
     
-    // Main road surface - Deep Asphalt with reflection hint
-    const road = this.add.rectangle(centerX, 300, roadWidth, 1200, 0x0f0a1a).setDepth(-5);
+    // Road Terrain (Dark ground)
+    this.add.rectangle(centerX, 300, 3000, 1200, 0x050505).setDepth(-10);
+
+    // Main road surface - Deep Charcoal reflective asphalt
+    const road = this.add.rectangle(centerX, 300, roadWidth, 1200, 0x121212).setDepth(-5);
     this.roads.push(road);
     
-    // Road Grid
-    this.roadGrid = this.add.grid(centerX, 300, roadWidth, 1200, roadWidth / 3, 100, 0, 0, 0xffffff, 0.05).setDepth(-4);
+    // Road Grid - Cinematic sapphire tint
+    this.roadGrid = this.add.grid(centerX, 300, roadWidth, 1200, roadWidth / 3, 100, 0, 0, 0x4a90e2, 0.05).setDepth(-4);
     
-    // Glowing Side Rails (Brighter sunset cyan/yellow)
-    this.sideRails = this.add.group();
-    for (let i = 0; i < 15; i++) {
-        const left = this.add.rectangle(centerX - roadWidth/2, i * 100, 6, 40, 0x00f0ff, 0.8).setDepth(1);
-        const right = this.add.rectangle(centerX + roadWidth/2, i * 100, 6, 40, 0x00f0ff, 0.8).setDepth(1);
-        this.sideRails.add(left);
-        this.sideRails.add(right);
+    // Modern Highway Barriers
+    for (let side of [-1, 1]) {
+        const x = centerX + (side * roadWidth / 2);
+        const barrier = this.add.graphics();
+        barrier.fillStyle(0x222222, 1);
+        barrier.fillRect(x - 5, 0, 10, 1200);
+        barrier.lineStyle(2, 0x333333, 1);
+        barrier.strokeRect(x - 5, 0, 10, 1200);
+        // Periodic supports
+        for(let j=0; j<12; j++) {
+            barrier.fillStyle(0x000000, 0.4);
+            barrier.fillRect(x-8, j*100, 16, 20);
+        }
+        barrier.setDepth(-3);
     }
 
     this.roadGroup = this.add.group();
-    for (let i = 0; i < 20; i++) { // Increased count
-      const line1 = this.add.rectangle(centerX - roadWidth/6, i * 60, 2, 30, 0xffffff, 0.3);
-      const line2 = this.add.rectangle(centerX + roadWidth/6, i * 60, 2, 30, 0xffffff, 0.3);
+    for (let i = 0; i < 20; i++) {
+      const line1 = this.add.rectangle(centerX - roadWidth/6, i * 60, 4, 35, 0xffffff, 0.25);
+      const line2 = this.add.rectangle(centerX + roadWidth/6, i * 60, 4, 35, 0xffffff, 0.25);
       this.roadGroup.add(line1);
       this.roadGroup.add(line2);
     }
@@ -362,20 +429,20 @@ export default class MainScene extends Phaser.Scene {
     const shadow = this.add.image(0, 10, 'bike-shadow').setAlpha(0.5);
 
     // Bike Visuals
-    const bikeSprite = this.add.image(0, 0, 'player-bike');
+    const bikeSprite = this.add.image(0, 0, 'player-bike').setScale(1.3);
     
     // Rim highlight (Extra sharp layer)
     const accents = this.add.graphics();
-    accents.lineStyle(1, 0x00f0ff, 0.2);
-    accents.strokeRoundedRect(-12, -40, 24, 80, 12);
+    accents.lineStyle(1.5, 0x00f0ff, 0.25);
+    accents.strokeRoundedRect(-15, -50, 30, 100, 14);
     
-    // Engine Glow - Sharply reduced radius and intensity
-    const glow = this.add.pointlight(0, 10, 0x00f0ff, 60, 0.4);
+    // Engine Glow - Balanced
+    const glow = this.add.pointlight(0, 10, 0x00f0ff, 70, 0.3);
     this.tweens.add({
         targets: glow,
-        intensity: 0.2,
-        radius: 40,
-        duration: 800,
+        intensity: 0.15,
+        radius: 50,
+        duration: 1000,
         yoyo: true,
         repeat: -1
     });
@@ -383,16 +450,16 @@ export default class MainScene extends Phaser.Scene {
     bikeContainer.add([beam, shadow, bikeSprite, accents, glow]);
     
     this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.82, [bikeContainer]);
-    this.vehicle.setSize(30, 80);
+    this.vehicle.setSize(40, 100);
     this.physics.world.enable(this.vehicle);
     (this.vehicle.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     
-    // Floating motion - Subdued for focus
+    // Floating motion
     this.tweens.add({
         targets: bikeContainer,
-        y: -3,
-        x: { from: -1, to: 1 },
-        duration: 1500,
+        y: -4,
+        x: { from: -1.5, to: 1.5 },
+        duration: 1800,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
@@ -581,9 +648,15 @@ export default class MainScene extends Phaser.Scene {
 
   private gameOver() {
     this.physics.pause();
+    this.isPaused = true;
     AudioService.playGameOver();
     AudioService.stopEngine();
-    this.game.events.emit('game-over', this.score);
+    
+    this.game.events.emit('game-over', {
+        score: this.score,
+        distance: Math.floor(this.distance),
+        multiplier: this.maxMultiplier
+    });
   }
 
   shutdown() {
@@ -627,6 +700,11 @@ export default class MainScene extends Phaser.Scene {
 
     this.drawSpeedMeter();
     const scrollSpeed = (this.speed * delta) / 1000;
+    this.distance += scrollSpeed / 50; // Arbitrary scaling for distance meters
+    
+    const currentMult = this.multiplierActive ? 2 : 1;
+    if (currentMult > this.maxMultiplier) this.maxMultiplier = currentMult;
+
     const limitY = this.scale.height + 100;
 
     // Frame-rate independent scrolling for perfect smoothness
@@ -635,9 +713,21 @@ export default class MainScene extends Phaser.Scene {
       if (line.y > limitY) line.y = -100;
     });
 
-    this.sideRails.getChildren().forEach((rail: any) => {
-        rail.y += scrollSpeed;
-        if (rail.y > limitY) rail.y = -100;
+    // Parallax Nature Scrolling
+    this.sceneryGroup.getChildren().forEach((item: any) => {
+        const pSpeed = scrollSpeed * item.getData('speed');
+        item.y += pSpeed;
+        if (item.y > limitY) {
+            item.y = -200;
+            const roadWidth = 600;
+            item.x = (this.scale.width / 2) + ((Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 100 + Math.random() * 400));
+        }
+    });
+
+    // Cloud Drift
+    this.clouds.getChildren().forEach((cloud: any) => {
+        cloud.x += 0.2;
+        if(cloud.x > 2000) cloud.x = -100;
     });
 
     // Cleanup

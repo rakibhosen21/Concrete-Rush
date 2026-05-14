@@ -10,8 +10,8 @@ interface GameContainerProps {
   onScoreUpdate: (score: number) => void;
   onHealthUpdate: (health: number) => void;
   onMultiplierUpdate: (multiplier: number) => void;
-  onGameOver: (finalScore: number) => void;
-  gameState: 'INTRO' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+  onGameOver: (data: { score: number; distance: number; multiplier: number }) => void;
+  gameState: 'INTRO' | 'PROFILE_SETUP' | 'HOME' | 'PLAYING' | 'GAME_OVER';
 }
 
 export const GameContainer: React.FC<GameContainerProps> = ({

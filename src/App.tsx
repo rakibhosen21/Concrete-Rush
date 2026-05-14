@@ -19,6 +19,7 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [health, setHealth] = useState(3);
   const [multiplier, setMultiplier] = useState(1);
+  const [gameOverData, setGameOverData] = useState<{ score: number; distance: number; multiplier: number } | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -35,7 +36,10 @@ export default function App() {
       ...newProfile,
       firstVisit: false,
       totalYield: 0,
-      gamesPlayed: 0
+      gamesPlayed: 0,
+      bestDistance: 0,
+      highScore: 0,
+      lastPlayedTime: Date.now()
     };
     setProfile(fullProfile);
     localStorage.setItem('concrete_profile', JSON.stringify(fullProfile));
@@ -49,20 +53,28 @@ export default function App() {
     setShowProfile(false);
   };
 
-  const handleGameOver = (finalScore: number) => {
-    setScore(finalScore);
+  const handleGameOver = (data: { score: number; distance: number; multiplier: number }) => {
+    setScore(data.score);
+    setGameOverData(data);
     
     // Update stats
-    const stats = {
-      highScore: parseInt(localStorage.getItem('concrete_high_score') || '0'),
-      totalYield: parseInt(localStorage.getItem('concrete_total_yield') || '0'),
-      gamesPlayed: parseInt(localStorage.getItem('concrete_games_played') || '0')
+    const currentProfile = JSON.parse(localStorage.getItem('concrete_profile') || '{}');
+    const newHighScore = Math.max(currentProfile.highScore || 0, data.score);
+    const newBestDistance = Math.max(currentProfile.bestDistance || 0, data.distance);
+    
+    const updatedProfile = {
+      ...currentProfile,
+      highScore: newHighScore,
+      bestDistance: newBestDistance,
+      totalYield: (currentProfile.totalYield || 0) + data.score,
+      gamesPlayed: (currentProfile.gamesPlayed || 0) + 1,
+      lastPlayedTime: Date.now()
     };
 
-    const newHighScore = Math.max(stats.highScore, finalScore);
+    setProfile(updatedProfile);
+    localStorage.setItem('concrete_profile', JSON.stringify(updatedProfile));
     localStorage.setItem('concrete_high_score', newHighScore.toString());
-    localStorage.setItem('concrete_total_yield', (stats.totalYield + finalScore).toString());
-    localStorage.setItem('concrete_games_played', (stats.gamesPlayed + 1).toString());
+    localStorage.setItem('concrete_best_distance', newBestDistance.toString());
 
     // Local Leaderboard
     const leaderboard = JSON.parse(localStorage.getItem('concrete_leaderboard') || '[]');
@@ -77,11 +89,14 @@ export default function App() {
     leaderboard.push({
         name: profile?.name || 'Unknown',
         avatar: profile?.avatar || '🤖',
-        score: finalScore,
-        grade: getGradeStr(finalScore),
+        score: data.score,
+        distance: data.distance,
+        grade: getGradeStr(data.score),
         timestamp: Date.now()
     });
-    localStorage.setItem('concrete_leaderboard', JSON.stringify(leaderboard));
+    // Keep only top 10
+    leaderboard.sort((a: any, b: any) => b.score - a.score);
+    localStorage.setItem('concrete_leaderboard', JSON.stringify(leaderboard.slice(0, 10)));
 
     setGameState('GAME_OVER');
   };
@@ -106,16 +121,16 @@ export default function App() {
           >
             <div 
               onClick={() => setShowProfile(true)}
-              className="flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl border border-white/5 p-1 sm:p-1.5 pr-3 sm:pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group pointer-events-auto shadow-2xl"
+              className="flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl border border-white/5 p-1 sm:p-1.5 pr-3 sm:pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group pointer-events-auto shadow-2xl overflow-hidden max-w-[200px] sm:max-w-[300px]"
             >
               <div className="text-sm sm:text-lg bg-zinc-800 w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-white shrink-0 group-hover:bg-yellow-400 group-hover:text-black transition-colors">
                 {profile.avatar}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-0.5 group-hover:text-yellow-400 transition-colors truncate">{profile.name}</span>
+                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-0.5 group-hover:text-yellow-400 transition-colors truncate">{profile.displayName || profile.name}</span>
                 <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
-                  <span className="text-[6px] sm:text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none truncate">SYNC_ACTIVE</span>
+                  <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+                  <span className="text-[6px] sm:text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none truncate opacity-60 group-hover:opacity-100 transition-opacity">@{profile.username || profile.codename || 'AGENT'}</span>
                 </div>
               </div>
             </div>
@@ -244,7 +259,7 @@ export default function App() {
             </motion.div>
           )}
 
-          {gameState === 'GAME_OVER' && (
+          {gameState === 'GAME_OVER' && gameOverData && (
             <motion.div
               key="gameover"
               initial={{ opacity: 0 }}
@@ -253,7 +268,9 @@ export default function App() {
               className="absolute inset-0 z-[60] flex items-center justify-center p-8 bg-black/60 backdrop-blur-md"
             >
               <GameOverOverlay 
-                score={score} 
+                score={gameOverData.score} 
+                distance={gameOverData.distance}
+                multiplier={gameOverData.multiplier}
                 onRestart={startGame} 
                 onHome={() => setGameState('HOME')} 
               />

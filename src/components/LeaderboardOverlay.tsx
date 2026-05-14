@@ -4,9 +4,11 @@ import { Trophy, FileText, X } from 'lucide-react';
 
 interface LeaderboardEntry {
   rank: number;
-  name: string;
+  displayName: string;
+  username: string;
   avatar: string;
   score: number;
+  distance: number;
   grade: string;
 }
 
@@ -24,7 +26,9 @@ export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ onClose 
     .slice(0, 10)
     .map((e, index) => ({
         rank: index + 1,
-        ...e
+        ...e,
+        displayName: e.displayName || e.name || 'ANON OPERATIVE',
+        username: e.username || e.codename || 'ID_UNKNOWN'
     }));
 
   return (
@@ -73,15 +77,17 @@ export const LeaderboardOverlay: React.FC<LeaderboardOverlayProps> = ({ onClose 
                             <span className={`text-sm sm:text-xl font-black italic w-5 sm:w-6 ${entry.rank === 1 ? 'text-yellow-400' : 'text-zinc-500'}`}>{entry.rank < 10 ? `0${entry.rank}` : entry.rank}</span>
                             <span className="text-xl sm:text-2xl shrink-0">{entry.avatar}</span>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-300 truncate">{entry.name}</span>
-                                <span className={`text-[6px] sm:text-[8px] tracking-[0.1em] sm:tracking-[0.2em] font-black ${
-                                    entry.grade === 'S' ? 'text-yellow-400' : 
-                                    entry.grade === 'A' ? 'text-white' : 'text-zinc-600'
-                                }`}>GRADE_{entry.grade}</span>
+                                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-300 truncate">{entry.displayName}</span>
+                                <span className="text-[6px] sm:text-[8px] font-mono text-zinc-500 uppercase tracking-widest truncate">@{entry.username}</span>
                             </div>
                         </div>
-                        <div className="text-lg sm:text-2xl font-black italic tracking-tighter text-yellow-400 group-hover:scale-110 transition-transform tabular-nums shrink-0 ml-2">
-                            {entry.score.toLocaleString()}
+                        <div className="flex flex-col items-end shrink-0 ml-2">
+                            <div className="text-lg sm:text-2xl font-black italic tracking-tighter text-yellow-400 group-hover:scale-110 transition-transform tabular-nums">
+                                {entry.score.toLocaleString()}
+                            </div>
+                            <div className="text-[6px] sm:text-[8px] font-mono text-zinc-600 uppercase tracking-widest">
+                                {entry.distance}M | GRADE_{entry.grade}
+                            </div>
                         </div>
                     </motion.div>
                 ))

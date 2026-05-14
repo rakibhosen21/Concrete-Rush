@@ -3,7 +3,8 @@ import Phaser from 'phaser';
 export default class MenuScene extends Phaser.Scene {
     private bike!: Phaser.GameObjects.Container;
     private roadGroup!: Phaser.GameObjects.Group;
-    private buildings!: Phaser.GameObjects.Group;
+    private scenery!: Phaser.GameObjects.Group;
+    private clouds!: Phaser.GameObjects.Group;
     private speed = 400;
 
     constructor() {
@@ -15,51 +16,56 @@ export default class MenuScene extends Phaser.Scene {
         const centerX = width / 2;
         const roadWidth = width * 0.7;
         
-        // Background
-        this.add.rectangle(centerX, height/2, width, height, 0x050208);
-        
-        // Atmosphere Gradient
+        // Cinematic Sky Gradient (Professional Blue)
         const sky = this.add.graphics();
-        sky.fillGradientStyle(0x7b1fa2, 0x7b1fa2, 0x050208, 0x050208, 1);
+        sky.fillGradientStyle(0x1a4a6e, 0x1a4a6e, 0x4a90e2, 0x4a90e2, 1);
         sky.fillRect(0, 0, width, height);
 
-        // Moving Light Rays
-        for (let i = 0; i < 5; i++) {
-            const ray = this.add.rectangle(Phaser.Math.Between(0, width), height/2, 2, height * 2, 0xffffff, 0.05);
-            ray.setAngle(Phaser.Math.Between(-20, 20));
-            this.tweens.add({
-                targets: ray,
-                alpha: 0.1,
-                x: ray.x + 100,
-                duration: Phaser.Math.Between(3000, 6000),
-                yoyo: true,
-                repeat: -1
-            });
+        // Distanced Sun
+        this.add.circle(width * 0.85, height * 0.15, 30, 0xffffff, 0.9).setBlendMode('ADD');
+        this.add.pointlight(width * 0.85, height * 0.15, 0xffe5b4, 250, 0.2);
+
+        // Horizon Fog
+        const horizon = this.add.graphics();
+        horizon.fillGradientStyle(0x4a90e2, 0x4a90e2, 0x000000, 0x000000, 0.3, 0.3, 0, 0);
+        horizon.fillRect(0, 0, width, height * 0.4);
+        
+        // Day Clouds
+        this.clouds = this.add.group();
+        for(let i=0; i<4; i++) {
+            const cloud = this.add.circle(Math.random()*width, Math.random()*height*0.3, 30 + Math.random()*20, 0xffffff, 0.1);
+            this.clouds.add(cloud);
         }
         
-        // Sun/Glow
-        this.add.circle(width * 0.8, height * 0.2, 100, 0xff7b00, 0.1).setBlendMode('ADD');
-        
-        // Parallax Buildings - Constrained to sides
-        this.buildings = this.add.group();
-        const sideWidth = (width - roadWidth) / 2;
-        for (let i = 0; i < 15; i++) {
-            // Left side
-            this.createBuilding(Phaser.Math.Between(0, sideWidth), Phaser.Math.Between(0, height));
-            // Right side
-            this.createBuilding(Phaser.Math.Between(width - sideWidth, width), Phaser.Math.Between(0, height));
+        // Nature Scenery
+        this.scenery = this.add.group();
+        for (let i = 0; i < 20; i++) {
+            const side = Math.random() > 0.5 ? 1 : -1;
+            const x = centerX + (side * (roadWidth/2 + 80 + Math.random() * 200));
+            const y = Math.random() * height;
+            this.createNature(x, y);
         }
 
-        // Road
-        this.add.rectangle(centerX, height/2, roadWidth, height, 0x0a0a0a);
+        // Road - Charcoal Asphalt
+        this.add.rectangle(centerX, height/2, roadWidth, height, 0x121212);
         
-        // Road Grid
-        this.add.grid(centerX, height/2, roadWidth, height, roadWidth/3, 80, 0, 0, 0x00f0ff, 0.1);
+        // Road Grid - Sapphire reflective grain
+        this.add.grid(centerX, height/2, roadWidth, height, roadWidth/3, 80, 0, 0, 0x4a90e2, 0.08);
 
-        // moving road lines - Subdued
+        // modern barriers
+        for (let side of [-1, 1]) {
+            const x = centerX + (side * roadWidth / 2);
+            const barrier = this.add.graphics();
+            barrier.fillStyle(0x222222, 1);
+            barrier.fillRect(x - 4, 0, 8, height);
+            barrier.lineStyle(1, 0x333333, 1);
+            barrier.strokeRect(x - 4, 0, 8, height);
+        }
+
+        // moving road lines
         this.roadGroup = this.add.group();
         for (let i = 0; i < 10; i++) {
-            const line = this.add.rectangle(centerX, i * 100, 2, 40, 0xffffff, 0.1);
+            const line = this.add.rectangle(centerX, i * 100, 3, 45, 0xffffff, 0.15);
             this.roadGroup.add(line);
         }
 
@@ -95,23 +101,26 @@ export default class MenuScene extends Phaser.Scene {
         });
     }
 
-    private createBuilding(x: number, y: number) {
-        const w = Phaser.Math.Between(60, 120);
-        const h = Phaser.Math.Between(150, 400);
-        const b = this.add.rectangle(x, y, w, h, 0x050208, 0.8);
-        
-        // Glowing windows - crisp dots
+    private createNature(x: number, y: number) {
+        const type = Math.random();
         const g = this.add.graphics();
-        for(let r=0; r<h/20; r++) {
-            for(let c=0; c<w/15; c++) {
-                if(Math.random() > 0.8) {
-                    const colors = [0xffffff, 0xfacc15, 0x00f0ff];
-                    g.fillStyle(colors[Math.floor(Math.random()*colors.length)], 0.5);
-                    g.fillRect(x - w/2 + 8 + c*12, y - h/2 + 12 + r*20, 3, 3);
-                }
-            }
+        
+        if (type > 0.6) {
+            // Refined Tree silhouette
+            g.fillStyle(0x3e2723); // trunk
+            g.fillRect(x - 2, y + 10, 4, 12);
+            g.fillStyle(0x1b5e20); // main leaves
+            g.fillTriangle(x, y - 25, x - 18, y + 10, x + 18, y + 10);
+            g.fillStyle(0x2e7d32); // accent
+            g.fillTriangle(x, y - 15, x - 12, y + 12, x + 12, y + 12);
+        } else {
+            // Bush
+            g.fillStyle(0x2e7d32, 0.7);
+            g.fillCircle(x, y, 10);
+            g.fillCircle(x - 6, y + 4, 8);
+            g.fillCircle(x + 6, y + 4, 8);
         }
-        this.buildings.add(b);
+        this.scenery.add(g);
     }
 
     private createBike(x: number, y: number) {
@@ -169,7 +178,7 @@ export default class MenuScene extends Phaser.Scene {
 
     update(time: number, delta: number) {
         const scrollSpeed = (this.speed * delta) / 1000;
-        const parallaxSpeed = (0.5 * delta) / 16.67; // Approx original speed
+        const parallaxSpeed = (0.3 * delta) / 16.67;
 
         // Road scroll
         this.roadGroup.getChildren().forEach((line: any) => {
@@ -177,10 +186,13 @@ export default class MenuScene extends Phaser.Scene {
             if (line.y > this.scale.height + 50) line.y = -50;
         });
 
-        // Building scroll (parallax)
-        this.buildings.getChildren().forEach((b: any) => {
-             b.y += parallaxSpeed;
-             if (b.y > this.scale.height + 200) b.y = -200;
+        // Nature scroll (parallax)
+        this.scenery.getChildren().forEach((item: any) => {
+             item.y += parallaxSpeed;
+             if (item.y > this.scale.height + 100) {
+                 item.y = -100;
+                 item.x = (this.scale.width / 2) + ((Math.random() > 0.5 ? 1 : -1) * (300 + Math.random() * 200));
+             }
         });
     }
 }
