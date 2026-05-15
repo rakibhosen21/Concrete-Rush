@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { TrendingUp, User, Trophy, BarChart3 } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { GameOverOverlay } from './components/GameOverOverlay';
+import { PauseOverlay } from './components/PauseOverlay';
 import { IntroLoader } from './components/IntroLoader';
 import { ProfileSetup } from './components/ProfileSetup';
 import { LeaderboardOverlay } from './components/LeaderboardOverlay';
@@ -22,6 +23,7 @@ export default function App() {
   const [gameOverData, setGameOverData] = useState<{ score: number; distance: number; multiplier: number } | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -105,7 +107,19 @@ export default function App() {
     setScore(0);
     setHealth(3);
     setMultiplier(1);
+    setIsPaused(false);
     setGameState('PLAYING');
+  };
+
+  const handlePause = (paused: boolean) => {
+    setIsPaused(paused);
+  };
+
+  const resumeGame = () => {
+    setIsPaused(false);
+    // Directly tell the scene if needed, but the PauseOverlay button will call this
+    // We can emit an event back to Phaser if needed
+    window.dispatchEvent(new CustomEvent('phaser-resume'));
   };
 
   return (
@@ -193,6 +207,7 @@ export default function App() {
                 onHealthUpdate={setHealth}
                 onMultiplierUpdate={setMultiplier}
                 onGameOver={handleGameOver}
+                onPauseUpdate={handlePause}
               />
             </Suspense>
           </div>
@@ -279,6 +294,13 @@ export default function App() {
                 onHome={() => setGameState('HOME')} 
               />
             </motion.div>
+          )}
+
+          {isPaused && gameState === 'PLAYING' && (
+             <PauseOverlay 
+                onResume={resumeGame} 
+                onHome={() => setGameState('HOME')} 
+             />
           )}
         </AnimatePresence>
 

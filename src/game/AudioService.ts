@@ -30,9 +30,9 @@ export class AudioService {
     const osc = this.ctx!.createOscillator();
     const gain = this.ctx!.createGain();
     
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(880, this.ctx!.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1760, this.ctx!.currentTime + 0.1);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, this.ctx!.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, this.ctx!.currentTime + 0.1);
     
     gain.gain.setValueAtTime(0.1, this.ctx!.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx!.currentTime + 0.1);
@@ -42,6 +42,25 @@ export class AudioService {
     
     osc.start();
     osc.stop(this.ctx!.currentTime + 0.1);
+  }
+
+  static playClick() {
+    if (this.isMuted) return;
+    this.init();
+    const osc = this.ctx!.createOscillator();
+    const gain = this.ctx!.createGain();
+    
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, this.ctx!.currentTime);
+    
+    gain.gain.setValueAtTime(0.2, this.ctx!.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx!.currentTime + 0.05);
+    
+    osc.connect(gain);
+    gain.connect(this.ctx!.destination);
+    
+    osc.start();
+    osc.stop(this.ctx!.currentTime + 0.05);
   }
 
   static playBoost() {

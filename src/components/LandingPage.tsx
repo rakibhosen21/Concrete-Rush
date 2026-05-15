@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Volume2, VolumeX, Globe, Rocket } from 'lucide-react';
 import { Logo } from './Logo';
 import { SocialLinks } from './SocialLinks';
+import { AudioService } from '../game/AudioService';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -70,7 +71,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
 
           <div className="relative pointer-events-auto z-10">
             <motion.button 
-              onClick={onStart}
+              onClick={() => {
+                AudioService.playClick();
+                onStart();
+              }}
               onMouseEnter={() => setIsHovering(true)}
               onMouseLeave={() => setIsHovering(false)}
               className="skew-btn px-10 sm:px-20 py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative"

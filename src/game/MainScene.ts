@@ -16,6 +16,7 @@ export default class MainScene extends Phaser.Scene {
 
   private currentLane = 1; // 0, 1, 2
   private isPaused = false;
+  private isJumping = false;
   private multiplierActive = false;
   private multiplierTimer?: Phaser.Time.TimerEvent;
   private emitter!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -100,6 +101,9 @@ export default class MainScene extends Phaser.Scene {
     // Inputs
     this.setupInputs();
     this.game.events.on('move-car', (dir: number) => this.moveLane(dir));
+    this.game.events.on('resume-game', () => {
+        if (this.isPaused) this.togglePause();
+    });
 
     // Speed Meter
     this.speedMeter = this.add.graphics();
@@ -185,6 +189,7 @@ export default class MainScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-RIGHT', () => this.moveLane(1));
     this.input.keyboard?.on('keydown-A', () => this.moveLane(-1));
     this.input.keyboard?.on('keydown-D', () => this.moveLane(1));
+    this.input.keyboard?.on('keydown-SPACE', () => this.jump());
     this.input.keyboard?.on('keydown-P', () => this.togglePause());
 
     // Swipe & Touch
@@ -205,6 +210,13 @@ export default class MainScene extends Phaser.Scene {
         if (pointer.x < this.scale.width / 2) this.moveLane(-1);
         else this.moveLane(1);
       }
+    });
+
+    // Jump fallback (Single tap top area or space)
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        if (pointer.y < this.scale.height * 0.3) {
+            this.jump();
+        }
     });
   }
 
@@ -243,8 +255,9 @@ export default class MainScene extends Phaser.Scene {
     return (centerX - laneWidth) + (lane * laneWidth);
   }
 
-  private togglePause() {
+  public togglePause() {
     this.isPaused = !this.isPaused;
+    this.game.events.emit('game-paused', this.isPaused);
     if (this.isPaused) {
       this.physics.pause();
     } else {
@@ -486,22 +499,41 @@ export default class MainScene extends Phaser.Scene {
       this.tweens.add({
         targets: this.vehicle,
         x: this.getLaneX(this.currentLane),
-        duration: 250,
+        duration: 180, // Snappier lane switching
         ease: 'Cubic.easeOut',
         onUpdate: () => {
           const progress = this.tweens.getTweensOf(this.vehicle)[0].progress;
           // Smooth leaning animation for bike
-          const tilt = (nextLane - prevLane) * 15 * Math.sin(progress * Math.PI);
+          const tilt = (nextLane - prevLane) * 12 * Math.sin(progress * Math.PI);
           this.vehicle.setAngle(tilt);
-          // Subtle squash and stretch for juice
-          this.vehicle.setScale(1 - Math.abs(tilt) * 0.01, 1 + Math.abs(tilt) * 0.01);
         },
         onComplete: () => {
           this.vehicle.setAngle(0);
-          this.vehicle.setScale(1);
         }
       });
     }
+  }
+
+  public jump() {
+    if (this.isJumping || this.isPaused) return;
+    this.isJumping = true;
+    
+    AudioService.playBoost(); // Reuse or add jump sound
+
+    this.tweens.add({
+      targets: this.vehicle.getAt(0), // Inner container
+      y: -80,
+      scale: 1.2,
+      duration: 350,
+      yoyo: true,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        this.isJumping = false;
+        if (this.cameras && this.cameras.main) {
+            this.cameras.main.shake(100, 0.005);
+        }
+      }
+    });
   }
 
   private spawnObstacle() {
@@ -540,6 +572,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private handleObstacleCollision(car: any, obstacle: any) {
+    if (this.isJumping) return;
     obstacle.destroy();
     this.health--;
     this.combo = 0;
