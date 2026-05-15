@@ -108,8 +108,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full h-auto sm:h-auto">
-      <div className="w-full aspect-[9/16] max-w-[500px] relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_10px_rgba(0,0,0,1)] ring-1 ring-white/5">
+    <div className={`relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full ${gameState === 'PLAYING' ? 'h-full' : 'h-auto'}`}>
+      <div className={`w-full relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_10px_rgba(0,0,0,1)] ring-1 ring-white/5 ${gameState === 'PLAYING' ? 'flex-1 aspect-auto max-w-none' : 'aspect-[9/16] max-w-[420px]'}`}>
         <div 
           id="game-container" 
           className="w-full h-full relative"

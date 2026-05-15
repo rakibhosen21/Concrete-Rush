@@ -96,7 +96,7 @@ export default function App() {
       <div className="w-full h-svh bg-[#050208] text-white overflow-hidden select-none flex flex-col items-center justify-center relative">
         
         {/* FIXED BRANDING HEADER */}
-        {!showGarage && (
+        {!showGarage && gameState !== 'PLAYING' && (
           <div className="fixed top-0 left-0 right-0 z-[9999] p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
             <div className="flex items-center gap-4">
               <div className="pointer-events-auto">
@@ -118,19 +118,20 @@ export default function App() {
           </div>
         )}
 
-        {gameState === 'PLAYING' && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute top-16 sm:top-20 left-0 right-0 z-[100] p-4 flex items-center justify-end pointer-events-none overflow-hidden"
-          >
-            <div className="flex items-center gap-3">
-              <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
-                <span className="text-[10px] font-mono text-cyan-400 tabular-nums">{userStats?.totalCoins || 0} $C</span>
+          {/* HUD Overlay - HIDE DURING PLAYING AS PER REQUEST */}
+          {gameState === 'PLAYING' && false && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-16 sm:top-20 left-0 right-0 z-[100] p-4 flex items-center justify-end pointer-events-none overflow-hidden"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
+                  <span className="text-[10px] font-mono text-cyan-400 tabular-nums">{userStats?.totalCoins || 0} $C</span>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
         <div className="relative z-10 w-full max-w-7xl flex items-center justify-center gap-4 sm:gap-8 lg:gap-12 px-4 sm:px-8">
           
@@ -168,8 +169,8 @@ export default function App() {
             </Suspense>
           </div>
 
-          {/* Right Panel - Realtime Data */}
-          {gameState === 'PLAYING' && (
+          {/* Right Panel - Realtime Data - REPLACED WITH EMPTY TO HIDE DURING GAMEPLAY */}
+          {false && gameState === 'PLAYING' && (
             <div className="hidden lg:flex flex-col gap-6 w-64 xl:w-72">
                <motion.div 
                 initial={{ opacity: 0, x: 20 }}

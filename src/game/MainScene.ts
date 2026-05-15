@@ -55,7 +55,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor(0x050208); // Dark Cyberpunk Sky
+    this.cameras.main.setBackgroundColor('#87CEEB'); // Day Sky Blue
     
     this.roadGraphics = this.add.graphics().setDepth(-10);
     this.createSkyline();
@@ -115,8 +115,8 @@ export default class MainScene extends Phaser.Scene {
     });
 
     // Spawn events
-    this.time.addEvent({ delay: 1200, callback: this.spawnObstacle, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 800, callback: this.spawnItem, callbackScope: this, loop: true });
+    this.time.addEvent({ delay: 1500, callback: this.spawnObstacle, callbackScope: this, loop: true });
+    this.time.addEvent({ delay: 1000, callback: this.spawnItem, callbackScope: this, loop: true });
     this.time.addEvent({ delay: 10000, callback: () => { this.speed = Math.min(this.speed + 80, 2000); }, loop: true });
 
     // Inputs
@@ -165,37 +165,52 @@ export default class MainScene extends Phaser.Scene {
 
     // Sky Gradient
     const sky = this.add.graphics();
-    sky.fillGradientStyle(0x000010, 0x000010, 0x0a0a2a, 0x0a0a2a, 1);
+    sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xB0E0FF, 0xB0E0FF, 1);
     sky.fillRect(0, 0, width, this.horizonY);
     sky.setDepth(-20);
 
+    // Sun
+    const sunGlow = this.add.pointlight(width - 120, 100, 0xffff00, 250, 0.6);
+    const sun = this.add.circle(width - 120, 100, 45, 0xffeb3b);
+    sun.setDepth(-19);
+    sunGlow.setDepth(-19);
+
+    // Clouds
+    for(let i=0; i<8; i++) {
+        const cx = Math.random() * width;
+        const cy = 50 + Math.random() * 150;
+        const cloud = this.add.circle(cx, cy, 20 + Math.random() * 30, 0xffffff, 0.4);
+        cloud.setDepth(-18);
+    }
+
     // Far Buildings (Slow Parallax)
     const farLayer = this.add.graphics().setDepth(-15).setScrollFactor(0.1);
-    this.drawCity(farLayer, 0x050510, 30, 100);
+    this.drawCity(farLayer, 0x666666, 40, 120);
     this.skylineLayers.push(farLayer);
 
     // Near Buildings (Faster Parallax)
     const nearLayer = this.add.graphics().setDepth(-12).setScrollFactor(0.3);
-    this.drawCity(nearLayer, 0x0a0a1a, 60, 250);
+    this.drawCity(nearLayer, 0x8B7355, 80, 280);
     this.skylineLayers.push(nearLayer);
   }
 
   private drawCity(g: Phaser.GameObjects.Graphics, color: number, minH: number, maxH: number) {
     const { width } = this.scale;
     g.fillStyle(color, 1);
-    for (let i = 0; i < 40; i++) {
-        const w = 40 + Math.random() * 80;
+    for (let i = 0; i < 20; i++) {
+        const w = 70 + Math.random() * 110;
         const h = minH + Math.random() * (maxH - minH);
         const x = Math.random() * width;
         g.fillRect(x, this.horizonY - h, w, h);
         
-        // Neon highlights
-        if (Math.random() > 0.5) {
-            const neonColors = [0x00f0ff, 0xbd00ff, 0xfacc15];
-            g.fillStyle(neonColors[Math.floor(Math.random() * 3)], 0.3);
-            g.fillRect(x + 10, this.horizonY - h + 20, w - 20, 4);
-            g.fillStyle(color, 1);
+        // Windows
+        g.fillStyle(0xfff7d1, 0.7);
+        for(let py = 25; py < h - 15; py += 35) {
+            for(let px = 15; px < w - 15; px += 25) {
+                if(Math.random() > 0.4) g.fillRect(x + px, this.horizonY - h + py, 12, 18);
+            }
         }
+        g.fillStyle(color, 1);
     }
   }
 
@@ -318,10 +333,26 @@ export default class MainScene extends Phaser.Scene {
     // Coin Texture
     const coinTex = this.make.graphics({ x: 0, y: 0, add: false } as any);
     coinTex.fillStyle(0xfacc15, 1);
-    coinTex.fillCircle(30, 30, 30);
+    coinTex.fillCircle(25, 25, 25);
     coinTex.lineStyle(3, 0xffffff, 0.5);
-    coinTex.strokeCircle(30, 30, 27);
-    coinTex.generateTexture('coin-tex', 60, 60);
+    coinTex.strokeCircle(25, 25, 23);
+    coinTex.generateTexture('coin-base', 50, 50);
+
+    // Final Coin Texture with Text
+    const coinFinal = this.add.container(0, 0);
+    const base = this.add.image(25, 25, 'coin-base');
+    const txt = this.add.text(25, 25, '$C', { 
+        fontSize: '18px', 
+        fontFamily: 'monospace', 
+        color: '#000000', 
+        fontStyle: 'bold' 
+    }).setOrigin(0.5);
+    coinFinal.add([base, txt]);
+    
+    const rt = this.add.renderTexture(0, 0, 50, 50);
+    rt.draw(coinFinal);
+    rt.saveTexture('coin-tex');
+    coinFinal.destroy();
 
     // Speed Boost - Green Diamond
     const boostGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
@@ -352,6 +383,7 @@ export default class MainScene extends Phaser.Scene {
     
     this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [carSprite, glow]);
     this.vehicle.setSize(48, 90);
+    this.vehicle.setDepth(50);
     this.physics.world.enable(this.vehicle);
     (this.vehicle.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
     
@@ -533,8 +565,8 @@ export default class MainScene extends Phaser.Scene {
     
     g.clear();
     
-    // Draw Main Asphalt (Trapezoid)
-    g.fillStyle(0x1a1a1a, 1);
+    // Draw Main Asphalt (Trapezoid) - Light Grey
+    g.fillStyle(0x888888, 1);
     g.beginPath();
     g.moveTo(centerX - this.roadWidthTop / 2, this.horizonY);
     g.lineTo(centerX + this.roadWidthTop / 2, this.horizonY);
@@ -546,7 +578,7 @@ export default class MainScene extends Phaser.Scene {
     // Road Edges (Rumble strips)
     this.drawRoadLines(g, centerX, 0.48, 0.52, true);
 
-    // Lane Lines
+    // Lane Lines (White Dashed)
     this.drawRoadLines(g, centerX, 0.15, 0.17, false);
     this.drawRoadLines(g, centerX, -0.15, -0.17, false);
   }
@@ -597,7 +629,10 @@ export default class MainScene extends Phaser.Scene {
         obj.x = screenX;
         obj.y = targetY;
         obj.setScale(z * 2);
-        obj.setDepth(targetY);
+        
+        // Coins at 40, Obstacles at 45 (just below car at 50)
+        const baseDepth = obj.texture.key === 'coin-tex' ? 40 : 45;
+        obj.setDepth(baseDepth + z);
 
         if (z > 1.1) {
           obj.destroy();
