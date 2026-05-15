@@ -2,6 +2,14 @@ import Phaser from 'phaser';
 import { PLAYER_CONFIG } from '../constants';
 import { AudioService } from './AudioService';
 
+const SKINS = {
+  'NEURAL RUNNER': { body: 0x050505, glow: 0x00f0ff },
+  'CYBER PHANTOM': { body: 0x2a0033, glow: 0xff00ff },
+  'GOLDEN CIRCUIT': { body: 0x3d3500, glow: 0xfacc15 },
+  'VOID STALKER': { body: 0x000000, glow: 0xff0000 },
+  'CONCRETE KING': { body: 0xffffff, glow: 0x00ffff }
+};
+
 export default class MainScene extends Phaser.Scene {
   private vehicle!: Phaser.GameObjects.Container;
   private roadGroup!: Phaser.GameObjects.Group;
@@ -243,52 +251,56 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createTextures() {
+    const userStats = this.game.registry.get('userStats');
+    const skinId = userStats?.equippedSkin || 'NEURAL RUNNER';
+    const skin = (SKINS as any)[skinId] || SKINS['NEURAL RUNNER'];
+
     // Player Cyber Car Texture - Top Down High Detail
     const carGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
     
-    // Main Body (Darker base for depth)
-    carGraphics.fillStyle(0x050505, 1);
+    // Main Body
+    carGraphics.fillStyle(skin.body, 1);
     carGraphics.fillRoundedRect(0, 0, 48, 90, 10);
     
     // Secondary Body / Aerodynamics
-    carGraphics.fillStyle(0x111111, 1);
+    carGraphics.fillStyle(0x111111, 0.4);
     carGraphics.fillRoundedRect(4, 10, 40, 70, 6);
 
-    // Cyan Outline
-    carGraphics.lineStyle(1.5, 0x00f0ff, 0.4);
+    // Glow Outline
+    carGraphics.lineStyle(2, skin.glow, 0.6);
     carGraphics.strokeRoundedRect(0, 0, 48, 90, 10);
 
-    // Wheels (4 corner blocks)
+    // Wheels
     carGraphics.fillStyle(0x0a0a0a, 1);
-    carGraphics.fillRoundedRect(-4, 12, 8, 20, 2); // Front L
-    carGraphics.fillRoundedRect(44, 12, 8, 20, 2); // Front R
-    carGraphics.fillRoundedRect(-4, 58, 8, 20, 2); // Rear L
-    carGraphics.fillRoundedRect(44, 58, 8, 20, 2); // Rear R
+    carGraphics.fillRoundedRect(-4, 12, 8, 20, 2); 
+    carGraphics.fillRoundedRect(44, 12, 8, 20, 2); 
+    carGraphics.fillRoundedRect(-4, 58, 8, 20, 2); 
+    carGraphics.fillRoundedRect(44, 58, 8, 20, 2); 
     
-    // Windshield (Cyan tinted glass)
-    carGraphics.fillStyle(0x00f0ff, 0.2);
+    // Windshield
+    carGraphics.fillStyle(skin.glow, 0.2);
     carGraphics.fillRoundedRect(8, 20, 32, 25, 4);
     
-    // Cyan Dash Lights inside cabin
-    carGraphics.fillStyle(0x00f0ff, 0.8);
+    // Dash Lights
+    carGraphics.fillStyle(skin.glow, 0.8);
     carGraphics.fillRect(12, 22, 4, 2);
     carGraphics.fillRect(32, 22, 4, 2);
 
-    // Front Headlights (Glowing Cyan)
-    carGraphics.fillStyle(0x00f0ff, 1);
+    // Front Headlights
+    carGraphics.fillStyle(skin.glow, 1);
     carGraphics.fillCircle(10, 6, 4);
     carGraphics.fillCircle(38, 6, 4);
     
-    // Tail Lights (Red Glow)
+    // Tail Lights
     carGraphics.fillStyle(0xff0000, 0.8);
     carGraphics.fillRect(4, 84, 12, 4);
     carGraphics.fillRect(32, 84, 12, 4);
 
     carGraphics.generateTexture('player-car', 48, 90);
 
-    // Light Trail
+    // Trail and other textures
     const trailGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    trailGraphics.fillStyle(0x00f0ff, 0.6);
+    trailGraphics.fillStyle(skin.glow, 0.6);
     trailGraphics.fillRect(0, 0, 4, 8);
     trailGraphics.generateTexture('light-trail', 4, 8);
 
@@ -351,8 +363,12 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createPlayer() {
+    const userStats = this.game.registry.get('userStats');
+    const skinId = userStats?.equippedSkin || 'NEURAL RUNNER';
+    const skin = (SKINS as any)[skinId] || SKINS['NEURAL RUNNER'];
+
     const carSprite = this.add.image(0, 0, 'player-car').setScale(1.1);
-    const glow = this.add.pointlight(0, 0, 0x00f0ff, 100, 0.4);
+    const glow = this.add.pointlight(0, 0, skin.glow, 100, 0.4);
     
     this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [carSprite, glow]);
     this.vehicle.setSize(48, 90);

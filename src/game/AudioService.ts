@@ -4,6 +4,10 @@ export class AudioService {
   private static isMuted = false;
   private static engineOsc: OscillatorNode | null = null;
   private static engineGain: GainNode | null = null;
+  
+  private static musicBassGain: GainNode | null = null;
+  private static musicMelodyGain: GainNode | null = null;
+  private static musicInterval: any = null;
 
   private static init() {
     if (!this.ctx) {
@@ -18,10 +22,75 @@ export class AudioService {
     this.isMuted = !this.isMuted;
     if (this.isMuted) {
       this.stopEngine();
-    } else if (this.engineOsc) {
-      this.startEngine();
+      this.stopBGM();
+    } else {
+      this.startBGM();
     }
     return this.isMuted;
+  }
+
+  static startBGM() {
+    if (this.isMuted) return;
+    this.init();
+    if (this.musicInterval) return;
+
+    // Bass Gain
+    this.musicBassGain = this.ctx!.createGain();
+    this.musicBassGain.gain.setValueAtTime(0, this.ctx!.currentTime);
+    this.musicBassGain.gain.linearRampToValueAtTime(0.08, this.ctx!.currentTime + 2);
+    this.musicBassGain.connect(this.ctx!.destination);
+
+    // Melody Gain
+    this.musicMelodyGain = this.ctx!.createGain();
+    this.musicMelodyGain.gain.setValueAtTime(0, this.ctx!.currentTime);
+    this.musicMelodyGain.gain.linearRampToValueAtTime(0.05, this.ctx!.currentTime + 4);
+    this.musicMelodyGain.connect(this.ctx!.destination);
+
+    const playPulse = () => {
+      const time = this.ctx!.currentTime;
+      
+      // Bass Sawtooth
+      const bass = this.ctx!.createOscillator();
+      bass.type = 'sawtooth';
+      bass.frequency.setValueAtTime(55, time); // A1
+      const bg = this.ctx!.createGain();
+      bg.gain.setValueAtTime(0.5, time);
+      bg.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+      bass.connect(bg);
+      bg.connect(this.musicBassGain!);
+      bass.start(time);
+      bass.stop(time + 0.6);
+
+      // Random Melody Sine
+      const notes = [440, 493.88, 523.25, 587.33, 659.25]; // A4 Pentatonic
+      const note = notes[Math.floor(Math.random() * notes.length)];
+      const mel = this.ctx!.createOscillator();
+      mel.type = 'sine';
+      mel.frequency.setValueAtTime(note, time + 0.1);
+      const mg = this.ctx!.createGain();
+      mg.gain.setValueAtTime(0, time);
+      mg.gain.linearRampToValueAtTime(0.3, time + 0.2);
+      mg.gain.exponentialRampToValueAtTime(0.01, time + 0.8);
+      mel.connect(mg);
+      mg.connect(this.musicMelodyGain!);
+      mel.start(time + 0.1);
+      mel.stop(time + 1.0);
+    };
+
+    this.musicInterval = setInterval(playPulse, 600); // ~100 BPM
+  }
+
+  static stopBGM() {
+    if (this.musicInterval) {
+      clearInterval(this.musicInterval);
+      this.musicInterval = null;
+    }
+    if (this.musicBassGain) {
+      this.musicBassGain.gain.linearRampToValueAtTime(0, this.ctx!.currentTime + 0.5);
+    }
+    if (this.musicMelodyGain) {
+      this.musicMelodyGain.gain.linearRampToValueAtTime(0, this.ctx!.currentTime + 0.5);
+    }
   }
 
   static playCollect() {

@@ -14,6 +14,7 @@ interface GameContainerProps {
   onGameOver: (data: { score: number; cCollected: number; distance: number; multiplier: number }) => void;
   onPauseUpdate: (paused: boolean) => void;
   gameState: 'INTRO' | 'PROFILE_SETUP' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+  userStats: any;
 }
 
 export const GameContainer: React.FC<GameContainerProps> = ({
@@ -24,9 +25,16 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onGameOver,
   onPauseUpdate,
   gameState,
+  userStats,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+
+  useEffect(() => {
+    if (gameRef.current) {
+        gameRef.current.registry.set('userStats', userStats);
+    }
+  }, [userStats]);
 
   useEffect(() => {
     if (!gameRef.current) {
@@ -36,6 +44,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       };
       const game = new Phaser.Game(config);
       gameRef.current = game;
+      game.registry.set('userStats', userStats);
 
       game.events.on('update-score', onScoreUpdate);
       game.events.on('update-c-collected', onCCollectedUpdate);

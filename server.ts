@@ -42,7 +42,9 @@ app.post('/api/register', async (req, res) => {
     bestScore: 0,
     totalCoins: 0,
     bestDistance: 0,
-    gamesPlayed: 0
+    gamesPlayed: 0,
+    unlockedSkins: ['NEURAL RUNNER'],
+    equippedSkin: 'NEURAL RUNNER'
   };
 
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
@@ -102,6 +104,28 @@ app.post('/api/update', (req, res) => {
   user.bestDistance = Math.max(user.bestDistance, distance);
   user.totalCoins += coinsCollected;
   user.gamesPlayed += 1;
+
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  res.json({ success: true, user });
+});
+
+app.post('/api/garage/action', (req, res) => {
+  const { username, action, skinId, cost } = req.body;
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  const user = users[username.toLowerCase()];
+
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (action === 'UNLOCK') {
+    if (user.totalCoins < cost) return res.status(400).json({ error: 'Insufficient $C' });
+    if (user.unlockedSkins.includes(skinId)) return res.status(400).json({ error: 'Already unlocked' });
+    
+    user.totalCoins -= cost;
+    user.unlockedSkins.push(skinId);
+  } else if (action === 'EQUIP') {
+    if (!user.unlockedSkins.includes(skinId)) return res.status(400).json({ error: 'Skin not unlocked' });
+    user.equippedSkin = skinId;
+  }
 
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
   res.json({ success: true, user });

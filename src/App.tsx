@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { TrendingUp, User, BarChart3, LogOut } from 'lucide-react';
+import { TrendingUp, User, BarChart3, LogOut, ShoppingBag } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { GameOverOverlay } from './components/GameOverOverlay';
 import { PauseOverlay } from './components/PauseOverlay';
@@ -10,8 +10,10 @@ import { ProfileDossier } from './components/ProfileDossier';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AccountSetup } from './components/AccountSetup';
+import { Garage } from './components/Garage';
 import { Logo } from './components/Logo';
 import { SocialLinks } from './components/SocialLinks';
+import { AudioService } from './game/AudioService';
 
 const GameContainer = lazy(() => import('./components/GameContainer').then(m => ({ default: m.GameContainer })));
 
@@ -25,6 +27,7 @@ export default function App() {
   const [multiplier, setMultiplier] = useState(1);
   const [gameOverData, setGameOverData] = useState<{ score: number; cCollected: number; distance: number; multiplier: number } | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showGarage, setShowGarage] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [userStats, setUserStats] = useState<any>(null);
@@ -33,6 +36,8 @@ export default function App() {
     const agentId = localStorage.getItem('concrete_agent_id');
     if (agentId) {
       fetchUserStats(agentId);
+      // Start BGM on user interaction or app load if permitted
+      AudioService.startBGM(); 
     } else {
       setGameState('ACCOUNT_SETUP');
     }
@@ -58,6 +63,7 @@ export default function App() {
   const handleAccountComplete = (username: string) => {
     fetchUserStats(username);
     setGameState('INTRO');
+    AudioService.startBGM();
   };
 
   const handleProfileComplete = (newProfile: any) => {
@@ -168,6 +174,15 @@ export default function App() {
           </div>
           
           <div className="hidden sm:flex items-center gap-6 pointer-events-auto">
+            {userStats && (
+               <button 
+                onClick={() => setShowGarage(true)}
+                className="flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 px-4 py-2 rounded-lg hover:bg-yellow-400/20 transition-all group"
+               >
+                 <BarChart3 size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                 <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Garage</span>
+               </button>
+            )}
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
               <span>Network_Stable</span>
@@ -175,7 +190,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Top bar profile - Positioned below main header if needed or merged */}
+        {/* ... (rest of profile bar) ... */}
         {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && profile && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
@@ -204,28 +219,19 @@ export default function App() {
             </div>
 
             {gameState === 'PLAYING' && (
-              <div className="lg:hidden flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
-                  <span className="text-[10px] font-mono text-yellow-400 tabular-nums">X{multiplier.toFixed(1)}</span>
-                </div>
-                <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
-                  <span className="text-[10px] font-mono text-white tabular-nums">{score.toLocaleString()}</span>
+                  <span className="text-[10px] font-mono text-cyan-400 tabular-nums">{userStats?.totalCoins || 0} $C</span>
                 </div>
               </div>
             )}
           </motion.div>
         )}
 
-        {/* Screen Flash Border */}
-        <motion.div 
-          animate={{ opacity: 0 }}
-          className="absolute inset-0 z-40 border-[8px] sm:border-[20px] border-yellow-400/30 pointer-events-none"
-        />
-
-        {/* Main Game Layout Container */}
+        {/* ... */}
         <div className="relative z-10 w-full max-w-7xl flex items-center justify-center gap-4 sm:gap-8 lg:gap-12 px-4 sm:px-8">
           
-          {/* Left Panel - Navigation */}
+          {/* ... */}
           {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && (
             <div className="hidden lg:flex flex-col gap-6 w-64 xl:w-72">
               <div className="bg-zinc-900 border border-white/5 p-5 xl:p-6 rounded-xl space-y-4">
@@ -235,6 +241,13 @@ export default function App() {
                 >
                   <BarChart3 size={18} className="text-yellow-400 opacity-40 group-hover:opacity-100" />
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Dossier</span>
+                </button>
+                <button 
+                  onClick={() => setShowGarage(true)}
+                  className="w-full bg-black/40 hover:bg-cyan-400/10 hover:border-cyan-400/30 border border-white/5 p-4 rounded-lg flex items-center gap-4 transition-all group"
+                >
+                  <ShoppingBag size={18} className="text-cyan-400 opacity-40 group-hover:opacity-100" />
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Vehicle Garage</span>
                 </button>
               </div>
             </div>
@@ -251,9 +264,11 @@ export default function App() {
                 onMultiplierUpdate={setMultiplier}
                 onGameOver={handleGameOver}
                 onPauseUpdate={handlePause}
+                userStats={userStats}
               />
             </Suspense>
           </div>
+          {/* ... */}
 
           {/* Right Panel - Realtime Data */}
           {gameState === 'PLAYING' && (
@@ -325,7 +340,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="absolute inset-0 z-50 flex items-center justify-center"
             >
-              <LandingPage onStart={startGame} />
+              <LandingPage onStart={startGame} onGarageOpen={() => setShowGarage(true)} userStats={userStats} />
             </motion.div>
           )}
 
@@ -363,14 +378,11 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* FIXED SOCIAL FOOTER - Persistent on Home/Game Over etc. */}
-        {gameState !== 'PLAYING' && (
-          <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 pointer-events-none flex justify-center">
-            <div className="pointer-events-auto">
-              <SocialLinks />
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {showGarage && userStats && (
+            <Garage onClose={() => setShowGarage(false)} userStats={userStats} onUpdateUser={setUserStats} />
+          )}
+        </AnimatePresence>
       </div>
     </ErrorBoundary>
   );

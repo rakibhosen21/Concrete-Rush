@@ -7,12 +7,19 @@ import { AudioService } from '../game/AudioService';
 
 interface LandingPageProps {
   onStart: () => void;
+  onGarageOpen: () => void;
+  userStats: any;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen, userStats }) => {
   const highScore = parseInt(localStorage.getItem('concrete_high_score') || '0');
   const [isHovering, setIsHovering] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const toggleMute = () => {
+    const muted = AudioService.toggleMute();
+    setIsMuted(muted);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
@@ -82,7 +89,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
              <div className="absolute inset-0 holographic-bg" />
           </div>
 
-          <div className="relative pointer-events-auto z-10">
+          <div className="relative pointer-events-auto z-10 flex flex-col sm:flex-row gap-4">
             <motion.button 
               onClick={() => {
                 AudioService.playClick();
@@ -94,6 +101,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             >
               <span className="relative z-10">INITIALIZE ENGINE</span>
             </motion.button>
+            
+            <button 
+              onClick={() => {
+                AudioService.playClick();
+                onGarageOpen();
+              }}
+              className="skew-btn px-8 sm:px-12 py-4 sm:py-6 bg-cyan-500/20 text-cyan-400 border border-cyan-400/30 font-black uppercase italic tracking-[0.2em] text-sm sm:text-lg transition-all hover:bg-cyan-400 hover:text-black hover:scale-105 active:scale-95 z-20"
+            >
+              VEHICLE_GARAGE
+            </button>
+
+            <button 
+              onClick={toggleMute}
+              className="p-4 sm:p-6 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 transition-all group"
+            >
+              {isMuted ? <VolumeX className="text-red-500" /> : <Volume2 className="text-cyan-400" />}
+            </button>
+
             <div className={`absolute -inset-4 bg-yellow-400/5 blur-2xl rounded-full -z-10 transition-opacity duration-300 ${isHovering ? 'opacity-100' : 'opacity-0'}`} />
           </div>
           
