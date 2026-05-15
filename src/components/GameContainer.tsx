@@ -28,7 +28,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   userStats,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(AudioService.getIsGameMuted());
 
   useEffect(() => {
     if (gameRef.current) {
@@ -89,7 +89,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   }, [gameState]);
 
   const toggleMute = () => {
-    const muted = AudioService.toggleMute();
+    const muted = AudioService.toggleGameMute();
     setIsMuted(muted);
   };
 

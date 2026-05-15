@@ -1,13 +1,49 @@
 
 export class AudioService {
   private static ctx: AudioContext | null = null;
-  private static isMuted = false;
+  private static isMenuMuted: boolean = localStorage.getItem('landingMuted') === 'true';
+  private static isGameMuted: boolean = localStorage.getItem('gameMuted') === 'true';
   private static engineOsc: OscillatorNode | null = null;
   private static engineGain: GainNode | null = null;
   
   private static reverb: ConvolverNode | null = null;
   private static musicIntervals: any[] = [];
   private static masterMusicGain: GainNode | null = null;
+
+  static getIsMenuMuted() { return this.isMenuMuted; }
+  static getIsGameMuted() { return this.isGameMuted; }
+
+  static toggleMenuMute() {
+    this.isMenuMuted = !this.isMenuMuted;
+    localStorage.setItem('landingMuted', String(this.isMenuMuted));
+    if (this.isMenuMuted) {
+      this.stopBGM();
+    } else {
+      this.startMenuBGM();
+    }
+    return this.isMenuMuted;
+  }
+
+  static toggleLandingBGM() {
+    return this.toggleMenuMute();
+  }
+
+  static toggleGameMute() {
+    this.isGameMuted = !this.isGameMuted;
+    localStorage.setItem('gameMuted', String(this.isGameMuted));
+    if (this.isGameMuted) {
+      if (this.masterMusicGain) {
+        this.masterMusicGain.gain.setValueAtTime(0, this.ctx!.currentTime);
+      }
+      this.stopEngine();
+    } else {
+      if (this.masterMusicGain) {
+        this.masterMusicGain.gain.setTargetAtTime(1, this.ctx!.currentTime, 0.1);
+      }
+      this.startGameBGM();
+    }
+    return this.isGameMuted;
+  }
 
   private static createReverb(duration: number, decay: number) {
     const sampleRate = this.ctx!.sampleRate;
@@ -23,38 +59,28 @@ export class AudioService {
   }
 
   private static init() {
-    if (!this.ctx) {
-      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    try {
+      if (!this.ctx || this.ctx.state === 'closed') {
+        this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        
+        this.reverb = this.ctx.createConvolver();
+        this.reverb.buffer = this.createReverb(2, 2);
+        this.reverb.connect(this.ctx.destination);
+
+        this.masterMusicGain = this.ctx.createGain();
+        this.masterMusicGain.connect(this.ctx.destination);
+      }
       
-      this.reverb = this.ctx.createConvolver();
-      this.reverb.buffer = this.createReverb(2, 2);
-      this.reverb.connect(this.ctx.destination);
-
-      this.masterMusicGain = this.ctx.createGain();
-      this.masterMusicGain.connect(this.ctx.destination);
-    }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
-    }
-  }
-
-  static toggleMute() {
-    this.isMuted = !this.isMuted;
-    if (this.isMuted) {
-      this.stopEngine();
-      if (this.masterMusicGain) {
-        this.masterMusicGain.gain.setValueAtTime(0, this.ctx!.currentTime);
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch((e) => console.warn('AudioContext resume failed:', e));
       }
-    } else {
-      if (this.masterMusicGain) {
-        this.masterMusicGain.gain.setTargetAtTime(1, this.ctx!.currentTime, 0.1);
-      }
+    } catch (e) {
+      console.error('Failed to initialize AudioContext:', e);
     }
-    return this.isMuted;
   }
 
   static startMenuBGM() {
-    if (this.isMuted) return;
+    if (this.isMenuMuted) return;
     this.init();
     
     // Stop any existing BGM
@@ -62,6 +88,10 @@ export class AudioService {
 
     const ctx = this.ctx!;
     const dest = this.masterMusicGain!;
+    
+    if (dest) {
+       dest.gain.setValueAtTime(1, ctx.currentTime);
+    }
     
     // 90 BPM Settings
     const beatTime = 60 / 90;
@@ -136,12 +166,16 @@ export class AudioService {
   }
 
   static startGameBGM() {
-    if (this.isMuted) return;
+    if (this.isGameMuted) return;
     this.init();
     this.stopBGM();
 
     const ctx = this.ctx!;
     const dest = this.masterMusicGain!;
+
+    if (dest) {
+       dest.gain.setValueAtTime(1, ctx.currentTime);
+    }
     
     // 140 BPM Settings - High Energy Chase
     const beatTime = 60 / 140;
@@ -229,7 +263,7 @@ export class AudioService {
   }
 
   static playCollect() {
-    if (this.isMuted) return;
+    if (this.isGameMuted) return;
     this.init();
     const osc = this.ctx!.createOscillator();
     const gain = this.ctx!.createGain();
@@ -249,7 +283,7 @@ export class AudioService {
   }
 
   static playClick() {
-    if (this.isMuted) return;
+    if (this.isMenuMuted && this.isGameMuted) return;
     this.init();
     const osc = this.ctx!.createOscillator();
     const gain = this.ctx!.createGain();
@@ -268,7 +302,7 @@ export class AudioService {
   }
 
   static playBoost() {
-    if (this.isMuted) return;
+    if (this.isGameMuted) return;
     this.init();
     const noise = this.ctx!.createBufferSource();
     const bufferSize = this.ctx!.sampleRate * 0.5;
@@ -297,7 +331,7 @@ export class AudioService {
   }
 
   static playGameOver() {
-    if (this.isMuted) return;
+    if (this.isGameMuted) return;
     this.init();
     const osc = this.ctx!.createOscillator();
     const gain = this.ctx!.createGain();
@@ -317,7 +351,7 @@ export class AudioService {
   }
 
   static startEngine() {
-    if (this.isMuted) return;
+    if (this.isGameMuted) return;
     this.init();
     if (this.engineOsc) this.stopEngine();
 

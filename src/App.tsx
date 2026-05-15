@@ -96,29 +96,27 @@ export default function App() {
       <div className="w-full h-svh bg-[#050208] text-white overflow-hidden select-none flex flex-col items-center justify-center relative">
         
         {/* FIXED BRANDING HEADER */}
-        <div className="fixed top-0 left-0 right-0 z-[9999] p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-          <div className="flex items-center gap-4">
-            <div className="pointer-events-auto">
-              <Logo />
+        {!showGarage && (
+          <div className="fixed top-0 left-0 right-0 z-[9999] p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+            <div className="flex items-center gap-4">
+              <div className="pointer-events-auto">
+                <Logo />
+              </div>
+            </div>
+            
+            <div className="hidden sm:flex items-center gap-6 pointer-events-auto">
+              {userStats && (
+                 <button 
+                  onClick={() => setShowGarage(true)}
+                  className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-400/30 px-4 py-2 rounded-lg hover:bg-cyan-400/20 transition-all group"
+                 >
+                   <ShoppingBag size={16} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                   <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Garage</span>
+                 </button>
+              )}
             </div>
           </div>
-          
-          <div className="hidden sm:flex items-center gap-6 pointer-events-auto">
-            {userStats && (
-               <button 
-                onClick={() => setShowGarage(true)}
-                className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-400/30 px-4 py-2 rounded-lg hover:bg-cyan-400/20 transition-all group"
-               >
-                 <ShoppingBag size={16} className="text-cyan-400 group-hover:scale-110 transition-transform" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Garage</span>
-               </button>
-            )}
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-              <span>Network_Stable</span>
-            </div>
-          </div>
-        </div>
+        )}
 
         {gameState === 'PLAYING' && (
           <motion.div 

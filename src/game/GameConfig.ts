@@ -17,5 +17,8 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
+  audio: {
+    noAudio: true
+  },
   scene: [],
 };
