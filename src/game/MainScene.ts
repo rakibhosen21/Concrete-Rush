@@ -29,7 +29,14 @@ export default class MainScene extends Phaser.Scene {
   private multiplierActive = false;
   private multiplierTimer?: Phaser.Time.TimerEvent;
   private emitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private hitEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private trailEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
+  
+  // HUD Elements
+  private scoreText!: Phaser.GameObjects.Text;
+  private cText!: Phaser.GameObjects.Text;
+  private multiplierText!: Phaser.GameObjects.Text;
+
   private roadGrid!: Phaser.GameObjects.Grid;
   private cyberGrid!: Phaser.GameObjects.Graphics;
   
@@ -78,6 +85,18 @@ export default class MainScene extends Phaser.Scene {
       emitting: false
     });
 
+    // Particle Emitter for hits
+    this.hitEmitter = this.add.particles(0, 0, 'light-trail', {
+      speed: { min: 100, max: 200 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 1, end: 0 },
+      alpha: { start: 1, end: 0 },
+      blendMode: 'ADD',
+      lifespan: 500,
+      emitting: false,
+      tint: 0xff0000
+    });
+
     // Spawn events
     this.time.addEvent({ delay: 1200, callback: this.spawnObstacle, callbackScope: this, loop: true });
     this.time.addEvent({ delay: 800, callback: this.spawnItem, callbackScope: this, loop: true });
@@ -97,32 +116,68 @@ export default class MainScene extends Phaser.Scene {
     this.physics.add.overlap(this.vehicle, this.obstacles, this.handleObstacleCollision, undefined, this);
     this.physics.add.overlap(this.vehicle, this.items, this.handleItemCollision, undefined, this);
 
+    this.createHUD();
+
     this.handleResize({ width: this.scale.width, height: this.scale.height });
+  }
+
+  private createHUD() {
+    const style = { fontFamily: 'monospace', fontSize: '24px', fontStyle: 'bold', fill: '#ffffff' };
+    
+    // Score Top Left
+    this.scoreText = this.add.text(20, 20, 'SCORE: 0', style).setScrollFactor(0).setDepth(200);
+    
+    // $C Top Right
+    this.cText = this.add.text(this.scale.width - 20, 20, '$C: 0', style)
+        .setOrigin(1, 0)
+        .setScrollFactor(0)
+        .setDepth(200)
+        .setTint(0xfacc15);
+    
+    // Multiplier Center Top
+    this.multiplierText = this.add.text(this.scale.width / 2, 20, '1.0X', style)
+        .setOrigin(0.5, 0)
+        .setScrollFactor(0)
+        .setDepth(200)
+        .setTint(0x00f0ff);
   }
 
   private createSkyline() {
     const { width, height } = this.scale;
-    const skyline = this.add.graphics();
-    skyline.setDepth(-8);
-    skyline.setScrollFactor(0);
-    skyline.fillStyle(0x020104, 1);
-    
-    // Draw building silhouettes
-    const horizon = height * 0.4;
-    for (let i = 0; i < 20; i++) {
-        const bWidth = 40 + Math.random() * 80;
-        const bHeight = 100 + Math.random() * 200;
-        const bx = (width / 20) * i;
-        skyline.fillRect(bx, horizon - bHeight, bWidth, bHeight);
+    // Dark cyberpunk city silhouette
+    const city = this.add.graphics();
+    city.setDepth(-8);
+    city.setScrollFactor(0);
+    city.fillStyle(0x020104, 1);
+
+    // Left Side City
+    for (let i = 0; i < 15; i++) {
+        const bWidth = 60 + Math.random() * 100;
+        const bHeight = 150 + Math.random() * 300;
+        const bx = Math.random() * (width * 0.2);
+        city.fillRect(bx, height - bHeight, bWidth, bHeight);
         
-        // Random "lit" windows
-        skyline.fillStyle(0x00f0ff, 0.15);
-        for(let j=0; j<5; j++) {
-            if(Math.random() > 0.7) {
-                skyline.fillRect(bx + 10, horizon - bHeight + 20 + j*30, bWidth - 20, 5);
-            }
+        // Window lights
+        city.fillStyle(0x00f0ff, 0.2);
+        for(let j=0; j<8; j++) {
+            if(Math.random() > 0.6) city.fillRect(bx + 10, height - bHeight + 30 + j*40, bWidth - 20, 4);
         }
-        skyline.fillStyle(0x020104, 1);
+        city.fillStyle(0x020104, 1);
+    }
+
+    // Right Side City
+    for (let i = 0; i < 15; i++) {
+        const bWidth = 60 + Math.random() * 100;
+        const bHeight = 150 + Math.random() * 300;
+        const bx = width - (Math.random() * (width * 0.2)) - bWidth;
+        city.fillRect(bx, height - bHeight, bWidth, bHeight);
+        
+        // Window lights
+        city.fillStyle(0xfacc15, 0.2);
+        for(let j=0; j<8; j++) {
+            if(Math.random() > 0.6) city.fillRect(bx + 10, height - bHeight + 30 + j*40, bWidth - 20, 4);
+        }
+        city.fillStyle(0x020104, 1);
     }
   }
 
@@ -258,107 +313,89 @@ export default class MainScene extends Phaser.Scene {
     // Player Cyber Car Texture - Top Down High Detail
     const carGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
     
-    // Main Body
+    // Base Car Shape
     carGraphics.fillStyle(skin.body, 1);
-    carGraphics.fillRoundedRect(0, 0, 48, 90, 10);
-    
-    // Secondary Body / Aerodynamics
-    carGraphics.fillStyle(0x111111, 0.4);
-    carGraphics.fillRoundedRect(4, 10, 40, 70, 6);
-
-    // Glow Outline
-    carGraphics.lineStyle(2, skin.glow, 0.6);
-    carGraphics.strokeRoundedRect(0, 0, 48, 90, 10);
-
-    // Wheels
-    carGraphics.fillStyle(0x0a0a0a, 1);
-    carGraphics.fillRoundedRect(-4, 12, 8, 20, 2); 
-    carGraphics.fillRoundedRect(44, 12, 8, 20, 2); 
-    carGraphics.fillRoundedRect(-4, 58, 8, 20, 2); 
-    carGraphics.fillRoundedRect(44, 58, 8, 20, 2); 
+    carGraphics.fillRoundedRect(0, 0, 50, 100, 12);
     
     // Windshield
+    carGraphics.fillStyle(0x0a0a0a, 0.8);
+    carGraphics.fillRoundedRect(5, 15, 40, 30, 6);
     carGraphics.fillStyle(skin.glow, 0.2);
-    carGraphics.fillRoundedRect(8, 20, 32, 25, 4);
-    
-    // Dash Lights
+    carGraphics.fillRoundedRect(8, 18, 34, 24, 4);
+
+    // Decorative Lines
+    carGraphics.lineStyle(2, skin.glow, 1);
+    carGraphics.beginPath();
+    carGraphics.moveTo(5, 50);
+    carGraphics.lineTo(45, 50);
+    carGraphics.strokePath();
+
+    // Headlights Glow
     carGraphics.fillStyle(skin.glow, 0.8);
-    carGraphics.fillRect(12, 22, 4, 2);
-    carGraphics.fillRect(32, 22, 4, 2);
-
-    // Front Headlights
-    carGraphics.fillStyle(skin.glow, 1);
-    carGraphics.fillCircle(10, 6, 4);
-    carGraphics.fillCircle(38, 6, 4);
+    carGraphics.fillCircle(12, 5, 5);
+    carGraphics.fillCircle(38, 5, 5);
     
-    // Tail Lights
-    carGraphics.fillStyle(0xff0000, 0.8);
-    carGraphics.fillRect(4, 84, 12, 4);
-    carGraphics.fillRect(32, 84, 12, 4);
+    carGraphics.generateTexture('player-car', 50, 100);
 
-    carGraphics.generateTexture('player-car', 48, 90);
-
-    // Trail and other textures
+    // Light trail
     const trailGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
     trailGraphics.fillStyle(skin.glow, 0.6);
     trailGraphics.fillRect(0, 0, 4, 8);
     trailGraphics.generateTexture('light-trail', 4, 8);
 
-    // Obstacle Texture
-    const obstacleGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    obstacleGraphics.fillStyle(0x0f0f0f);
-    obstacleGraphics.fillRoundedRect(0, 0, 56, 70, 4);
-    obstacleGraphics.lineStyle(2, 0xff0000, 0.5);
-    obstacleGraphics.strokeRoundedRect(0, 0, 56, 70, 4);
-    obstacleGraphics.generateTexture('obstacle', 56, 70);
+    // Coin Texture - Yellow circle with $C handled in spawnItem via graphics but need base
+    const coinTex = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    coinTex.fillStyle(0xfacc15, 1);
+    coinTex.fillCircle(30, 30, 30);
+    coinTex.lineStyle(2, 0xffffff, 1);
+    coinTex.strokeCircle(30, 30, 27);
+    coinTex.generateTexture('coin-tex', 60, 60);
 
-    // $C Coin Texture - Glowing Gold with Text
-    const coinGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    const gold = 0xFFD700;
-    
-    // Outer Glow
-    coinGraphics.fillStyle(gold, 0.2);
-    coinGraphics.fillCircle(25, 25, 25);
-    
-    // Coin Base
-    coinGraphics.fillStyle(gold, 1);
-    coinGraphics.lineStyle(2, 0x000000, 0.3);
-    coinGraphics.fillCircle(25, 25, 20);
-    coinGraphics.strokeCircle(25, 25, 20);
-    
-    // Inner Ring
-    coinGraphics.lineStyle(1.5, 0x000000, 0.2);
-    coinGraphics.strokeCircle(25, 25, 17);
+    // Obstacle Texture - Red Glowing Block
+    const obsGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    obsGraphics.fillStyle(0x1a0000, 1);
+    obsGraphics.fillRoundedRect(0, 0, 80, 80, 8);
+    obsGraphics.lineStyle(4, 0xff3e3e, 1);
+    obsGraphics.strokeRoundedRect(0, 0, 80, 80, 8);
+    obsGraphics.generateTexture('obstacle', 80, 80);
 
-    coinGraphics.generateTexture('coin-base', 50, 50);
-
-    // Speed Boost Texture
+    // Speed Boost - Green Diamond
     const boostGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    boostGraphics.fillStyle(0x22c55e, 0.2);
-    boostGraphics.fillCircle(20, 20, 20);
-    boostGraphics.lineStyle(2, 0x22c55e, 1);
-    boostGraphics.strokeRoundedRect(10, 10, 20, 20, 4);
-    boostGraphics.generateTexture('boost-tex', 40, 40);
+    boostGraphics.fillStyle(0x22c55e, 1);
+    boostGraphics.beginPath();
+    boostGraphics.moveTo(25, 0);
+    boostGraphics.lineTo(50, 25);
+    boostGraphics.lineTo(25, 50);
+    boostGraphics.lineTo(0, 25);
+    boostGraphics.closePath();
+    boostGraphics.fillPath();
+    boostGraphics.lineStyle(2, 0xffffff, 0.8);
+    boostGraphics.strokePath();
+    boostGraphics.generateTexture('boost-tex', 50, 50);
   }
 
   private createRoad() {
     const centerX = this.scale.width / 2;
-    const roadWidth = Math.min(this.scale.width * 0.9, 600);
+    const roadWidth = Math.min(this.scale.width * 0.8, 500);
     
-    // Main road surface
-    this.add.rectangle(centerX, this.scale.height / 2, roadWidth, this.scale.height, 0x0a0a0a).setDepth(-5);
+    // Asphalt surface
+    this.add.rectangle(centerX, this.scale.height / 2, roadWidth, this.scale.height, 0x121212).setDepth(-5);
     
-    // Road Grid - Cyan perspective lines
-    this.roadGrid = this.add.grid(centerX, this.scale.height / 2, roadWidth, this.scale.height, roadWidth / 3, 100, 0, 0, 0x00f0ff, 0.05).setDepth(-4);
-    
+    // Side curbs
+    this.add.rectangle(centerX - roadWidth/2 - 5, this.scale.height/2, 10, this.scale.height, 0x00f0ff, 0.4).setDepth(-4);
+    this.add.rectangle(centerX + roadWidth/2 + 5, this.scale.height/2, 10, this.scale.height, 0xfacc15, 0.4).setDepth(-4);
+
     // Lane lines Group
     this.roadGroup = this.add.group();
-    for (let i = 0; i < 15; i++) {
-        const y = i * 100;
-        const line1 = this.add.rectangle(centerX - roadWidth/6, y, 4, 40, 0xffffff, 0.2).setDepth(-3);
-        const line2 = this.add.rectangle(centerX + roadWidth/6, y, 4, 40, 0xffffff, 0.2).setDepth(-3);
-        this.roadGroup.add(line1);
-        this.roadGroup.add(line2);
+    const laneWidth = roadWidth / 3;
+    
+    // Create scrolling lane markers
+    for (let j = 0; j < 2; j++) {
+        const lx = centerX - roadWidth/2 + (j + 1) * laneWidth;
+        for (let i = 0; i < 10; i++) {
+            const line = this.add.rectangle(lx, i * 200, 6, 60, 0xffffff, 0.3).setDepth(-3);
+            this.roadGroup.add(line);
+        }
     }
   }
 
@@ -512,13 +549,29 @@ export default class MainScene extends Phaser.Scene {
 
   private handleObstacleCollision(car: any, obstacle: any) {
     if (this.isJumping) return;
+    
+    const ox = obstacle.x;
+    const oy = obstacle.y;
     obstacle.destroy();
     this.health--;
     
     if (this.cameras && this.cameras.main) {
-      this.cameras.main.shake(300, 0.02);
-      this.cameras.main.flash(100, 255, 0, 0);
+      this.cameras.main.shake(400, 0.03);
+      this.cameras.main.flash(150, 255, 0, 0);
     }
+
+    this.hitEmitter.emitParticleAt(ox, oy, 20);
+    
+    // Visual flash on vehicle
+    const sprite = this.vehicle.getAt(0) as Phaser.GameObjects.Image;
+    this.tweens.add({
+        targets: sprite,
+        tint: 0xff0000,
+        duration: 100,
+        yoyo: true,
+        repeat: 3
+    });
+
     this.game.events.emit('update-health', this.health);
     
     if (this.health <= 0) {
@@ -614,5 +667,14 @@ export default class MainScene extends Phaser.Scene {
     this.items.getChildren().forEach((item: any) => {
       if (item.y > limitY) item.destroy();
     });
+
+    // Update HUD
+    if (this.scoreText) this.scoreText.setText(`SCORE: ${this.score}`);
+    if (this.cText) this.cText.setText(`$C: ${this.cCollected}`);
+    if (this.multiplierText) {
+        const m = this.multiplierActive ? 2 : 1;
+        this.multiplierText.setText(`${m.toFixed(1)}X`);
+        this.multiplierText.setVisible(m > 1);
+    }
   }
 }

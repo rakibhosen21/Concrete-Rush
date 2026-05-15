@@ -29,6 +29,15 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const [isMuted, setIsMuted] = useState(AudioService.getIsGameMuted());
+  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (gameRef.current) {
@@ -67,7 +76,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         if (gameRef.current && gameState === 'PLAYING') {
             const scene = gameRef.current.scene.getScene('MainScene') as MainScene;
             if (scene) {
-                // Since togglePause is private, we can emit an event or make a helper
                 gameRef.current.events.emit('resume-game');
             }
         }
@@ -109,8 +117,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full max-w-[500px] h-full sm:h-auto">
-      <div className="w-full aspect-[9/16] relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,240,255,0.1)]">
+    <div className={`relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full ${isLandscape ? 'h-full' : 'h-auto'} sm:h-auto`}>
+      <div className={`w-full ${isLandscape ? 'aspect-video max-w-none' : 'aspect-[9/16] max-w-[500px]'} relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_10px_rgba(0,0,0,1)] ring-1 ring-white/5`}>
         <div 
           id="game-container" 
           className="w-full h-full relative"
@@ -119,7 +127,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         {/* Mute Button */}
         <button 
           onClick={toggleMute}
-          className="absolute top-4 right-4 z-20 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/60 hover:text-yellow-400 transition-all active:scale-95"
+          className="absolute top-4 right-4 z-50 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/60 hover:text-yellow-400 transition-all active:scale-95 pointer-events-auto"
         >
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
@@ -134,10 +142,45 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           }}
           className="absolute top-0 left-1/4 right-1/4 h-12 z-10 cursor-pointer lg:hidden"
         />
+
+        {/* Overlay Controls in Landscape Mobile */}
+        {gameState === 'PLAYING' && isLandscape && (
+            <div className="absolute inset-0 pointer-events-none z-40 lg:hidden flex justify-between p-6 items-end">
+                <div className="flex gap-4">
+                    <button 
+                        onPointerDown={(e) => {
+                            (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                            moveCar(-1);
+                        }}
+                        className="w-20 h-20 bg-black/30 backdrop-blur-sm border-2 border-cyan-400/30 rounded-full flex items-center justify-center pointer-events-auto active:scale-95 active:bg-cyan-400/20"
+                    >
+                        <ChevronLeft size={40} className="text-cyan-400" />
+                    </button>
+                    <button 
+                        onPointerDown={(e) => {
+                            (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                            moveCar(1);
+                        }}
+                        className="w-20 h-20 bg-black/30 backdrop-blur-sm border-2 border-yellow-400/30 rounded-full flex items-center justify-center pointer-events-auto active:scale-95 active:bg-yellow-400/20"
+                    >
+                        <ChevronRight size={40} className="text-yellow-400" />
+                    </button>
+                </div>
+                <button 
+                    onPointerDown={(e) => {
+                        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                        jump();
+                    }}
+                    className="w-20 h-20 bg-black/30 backdrop-blur-sm border-2 border-white/30 rounded-full flex items-center justify-center pointer-events-auto active:scale-95 active:bg-white/20"
+                >
+                    <div className="w-8 h-2 bg-white/60 rounded-full" />
+                </button>
+            </div>
+        )}
       </div>
 
-      {/* Mobile Controls - Positioned below the game container on mobile */}
-      {gameState === 'PLAYING' && (
+      {/* Mobile Controls - Portrait Mode Bottom Bar */}
+      {gameState === 'PLAYING' && !isLandscape && (
         <div className="lg:hidden w-full h-[100px] shrink-0 pointer-events-none flex gap-2 z-30 mt-4 px-2">
            <button 
              onPointerDown={(e) => {

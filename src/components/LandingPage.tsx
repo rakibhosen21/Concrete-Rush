@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Volume2, VolumeX, Globe } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Volume2, VolumeX, Globe, RotateCcw, Smartphone } from 'lucide-react';
 import { AudioService } from '../game/AudioService';
 
 interface LandingPageProps {
@@ -10,17 +10,60 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen, userStats }) => {
-  const highScore = parseInt(localStorage.getItem('concrete_high_score') || '0');
   const [isHovering, setIsHovering] = useState(false);
   const [isMuted, setIsMuted] = useState(AudioService.getIsMenuMuted());
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [showRotatePrompt, setShowRotatePrompt] = useState(false);
 
-  const toggleMute = () => {
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const muted = AudioService.toggleLandingBGM();
     setIsMuted(muted);
   };
 
+  const checkOrientationAndStart = () => {
+    AudioService.playClick();
+    
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isPortrait = window.innerHeight > window.innerWidth;
+
+    if (isMobile && isPortrait) {
+      setShowRotatePrompt(true);
+    } else {
+      startLoadingSequence();
+    }
+  };
+
+  const startLoadingSequence = () => {
+    setShowRotatePrompt(false);
+    setIsLoading(true);
+    setLoadingProgress(0);
+    
+    const interval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setTimeout(onStart, 500);
+          return 100;
+        }
+        return prev + Math.random() * 15;
+      });
+    }, 100);
+  };
+
+  useEffect(() => {
+    const handleOrientation = () => {
+      if (showRotatePrompt && window.innerWidth > window.innerHeight) {
+        startLoadingSequence();
+      }
+    };
+    window.addEventListener('resize', handleOrientation);
+    return () => window.removeEventListener('resize', handleOrientation);
+  }, [showRotatePrompt]);
+
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
+    <div className="min-h-screen w-full bg-black text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
       {/* Immersive Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900/10 to-black pointer-events-none z-0" />
       
@@ -52,7 +95,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
       {/* Radial Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 blur-[150px] rounded-full pointer-events-none z-0" />
  
-      {/* Header with Mute Toggle */}
+      {/* Header */}
       <nav className="relative z-10 px-4 sm:px-8 py-4 sm:py-6 flex justify-between items-center max-w-7xl mx-auto w-full pointer-events-auto">
         <motion.div 
           initial={{ opacity: 0, x: 10 }}
@@ -64,13 +107,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
             <span className="group-hover:text-yellow-400 transition-colors tracking-widest uppercase">Node_Connected</span>
           </div>
         </motion.div>
-        
-        <button 
-          onClick={toggleMute}
-          className="p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all group pointer-events-auto"
-        >
-          {isMuted ? <VolumeX size={18} className="text-red-500" /> : <Volume2 size={18} className="text-cyan-400" />}
-        </button>
       </nav>
  
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center text-center max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
@@ -80,7 +116,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
           transition={{ duration: 1 }}
           className="mb-8"
         >
-          <h1 className="text-4xl sm:text-7xl font-black italic tracking-tighter text-white mb-2 uppercase drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">CONCRETE RUSH</h1>
+          <h1 className="text-5xl sm:text-8xl font-black italic tracking-tighter text-white mb-2 uppercase drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">CONCRETE RUSH</h1>
           <div className="text-[10px] sm:text-xs font-black uppercase tracking-[0.8em] text-cyan-400">NEURAL LINK ACTIVE</div>
         </motion.div>
 
@@ -92,15 +128,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
         >
           <div className="relative pointer-events-auto z-10 flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
             <motion.button 
-              onClick={() => {
-                AudioService.playClick();
-                onStart();
-              }}
+              onClick={checkOrientationAndStart}
               onMouseEnter={() => setIsHovering(true)}
               onMouseLeave={() => setIsHovering(false)}
-              className="w-full skew-btn py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative"
+              className="w-full skew-btn py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative overflow-hidden"
             >
               <span className="relative z-10">INITIALIZE ENGINE</span>
+              <motion.div 
+                className="absolute inset-0 bg-white/20"
+                initial={{ x: '-100%' }}
+                whileHover={{ x: '100%' }}
+                transition={{ duration: 0.6 }}
+              />
             </motion.button>
             
             <button 
@@ -113,40 +152,94 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
               VEHICLE_GARAGE
             </button>
 
-            <a 
-              href="https://www.concrete.xyz/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              onClick={() => AudioService.playClick()}
-              className="w-full skew-btn py-4 bg-black border border-cyan-400/50 text-cyan-400 font-black uppercase italic tracking-[0.2em] text-sm transition-all hover:bg-cyan-400/10 hover:border-cyan-400 active:scale-95 text-center flex items-center justify-center gap-2"
+            {/* Subtle BGM Toggle */}
+            <button 
+                onClick={toggleMute}
+                className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white transition-colors flex items-center gap-2 group px-4 py-2"
             >
-              EXPLORE CONCRETE
-            </a>
-
-            <a 
-              href="https://points.concrete.xyz/home" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              onClick={() => AudioService.playClick()}
-              className="w-full skew-btn py-4 bg-black border border-yellow-400/50 text-yellow-400 font-black uppercase italic tracking-[0.2em] text-sm transition-all hover:bg-yellow-400/10 hover:border-yellow-400 active:scale-95 text-center flex items-center justify-center gap-2"
-            >
-              DAILY CHECK-IN ✓
-            </a>
+                <span className="group-hover:animate-pulse">♪</span>
+                <span className="tracking-widest">BGM {isMuted ? 'OFF' : 'ON'}</span>
+                {isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+            </button>
 
             <div className={`absolute -inset-4 bg-yellow-400/5 blur-2xl rounded-full -z-10 transition-opacity duration-300 ${isHovering ? 'opacity-100' : 'opacity-0'}`} />
           </div>
           
           {/* Social Links */}
-          <div className="flex items-center justify-center gap-4 sm:gap-6 mt-12 sm:mt-16 pointer-events-auto">
-            <a href="https://x.com/ConcreteXYZ" target="_blank" rel="noopener noreferrer" className="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-yellow-400/30 transition-all group">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-400 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          <div className="flex items-center justify-center gap-4 sm:gap-6 mt-8 pointer-events-auto">
+            <a href="https://x.com/ConcreteXYZ" target="_blank" rel="noopener noreferrer" className="pointer-events-auto w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-yellow-400/30 transition-all group">
+              <svg className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
-            <a href="https://discord.gg/concretexyz" target="_blank" rel="noopener noreferrer" className="pointer-events-auto w-10 h-10 sm:w-12 sm:h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-white transition-all group">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-400 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.46-.63.862-1.31 1.2-2.022a.076.076 0 0 0-.041-.105 13.11 13.11 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.125-.094.249-.192.37-.293a.074.074 0 0 1 .077-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.101.246.199.37.293a.077.077 0 0 1-.006.127 12.29 12.29 0 0 1-1.873.892.077.077 0 0 0-.041.107c.34.71.742 1.39 1.2 2.02a.078.078 0 0 0 .084.028 19.83 19.83 0 0 0 6.002-3.03.085.085 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.18 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.18 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.946 2.419-2.157 2.419z"/></svg>
+            <a href="https://discord.gg/concretexyz" target="_blank" rel="noopener noreferrer" className="pointer-events-auto w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-white/10 hover:border-white transition-all group">
+              <svg className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.46-.63.862-1.31 1.2-2.022a.076.076 0 0 0-.041-.105 13.11 13.11 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.125-.094.249-.192.37-.293a.074.074 0 0 1 .077-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.101.246.199.37.293a.077.077 0 0 1-.006.127 12.29 12.29 0 0 1-1.873.892.077.077 0 0 0-.041.107c.34.71.742 1.39 1.2 2.02a.078.078 0 0 0 .084.028 19.83 19.83 0 0 0 6.002-3.03.085.085 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.18 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.18 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.086 2.157 2.419 0 1.334-.946 2.419-2.157 2.419z"/></svg>
             </a>
           </div>
         </motion.div>
       </main>
+
+      {/* Overlays */}
+      <AnimatePresence>
+        {showRotatePrompt && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-8 pointer-events-auto"
+          >
+            <motion.div
+              animate={{ rotate: 90 }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="mb-8 text-cyan-400"
+            >
+              <Smartphone size={64} />
+            </motion.div>
+            <h2 className="text-2xl font-black italic tracking-tighter text-white mb-4 uppercase text-center">ROTATE DEVICE</h2>
+            <p className="text-white/60 font-mono text-sm tracking-widest uppercase text-center max-w-xs">Optimal experience requires landscape orientation</p>
+          </motion.div>
+        )}
+
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-8 pointer-events-auto"
+          >
+            <div className="w-full max-w-md space-y-6">
+              <div className="flex justify-between items-end">
+                <div className="space-y-1">
+                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400">Syncing_Neural_Link</div>
+                  <div className="text-2xl font-black italic tracking-tighter text-white uppercase italic">SYSTEM_INITIALIZING</div>
+                </div>
+                <div className="text-3xl font-black italic text-cyan-400 font-mono">{Math.floor(loadingProgress)}%</div>
+              </div>
+              
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${loadingProgress}%` }}
+                  className="h-full bg-cyan-400 shadow-[0_0_20px_#22d3ee] relative overflow-hidden"
+                >
+                    <motion.div 
+                        className="absolute inset-0 bg-white/30"
+                        animate={{ x: ['-100%', '100%'] }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    />
+                </motion.div>
+              </div>
+
+              <div className="flex justify-between items-center text-[8px] font-bold text-white/20 tracking-widest uppercase">
+                <span>BUFFERING_ASSETS</span>
+                <span className="flex gap-1">
+                    <span className="w-1 h-1 bg-cyan-400/40 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <span className="w-1 h-1 bg-cyan-400/40 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <span className="w-1 h-1 bg-cyan-400/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Controls Hint */}
       <div className="absolute bottom-4 sm:bottom-8 left-0 w-full px-4 sm:px-8 flex justify-between items-end pointer-events-none opacity-40">
