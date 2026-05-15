@@ -12,11 +12,18 @@ interface Skin {
 }
 
 export const SKINS: Skin[] = [
-  { id: 'NEURAL RUNNER', name: 'NEURAL RUNNER', price: 0, bodyColor: 0x050505, glowColor: 0x00f0ff, description: 'Standard issue neural-linked operative vehicle.' },
-  { id: 'CYBER PHANTOM', name: 'CYBER PHANTOM', price: 50, bodyColor: 0x2a0033, glowColor: 0xff00ff, description: 'Low-profile stealth chassis with neon-pink stabilizers.' },
-  { id: 'GOLDEN CIRCUIT', name: 'GOLDEN CIRCUIT', price: 100, bodyColor: 0x3d3500, glowColor: 0xfacc15, description: 'Experimental high-yield gold plating for the elite.' },
-  { id: 'VOID STALKER', name: 'VOID STALKER', price: 200, bodyColor: 0x000000, glowColor: 0xff0000, description: 'Blackened titanium hull designed for high-risk extraction.' },
-  { id: 'CONCRETE KING', name: 'CONCRETE KING', price: 500, bodyColor: 0xffffff, glowColor: 0x00ffff, description: 'The absolute pinnacle of street-side engineering.' }
+  { id: 'NEURAL RUNNER', name: 'NEURAL RUNNER', price: 0, bodyColor: 0x333333, glowColor: 0x00f0ff, description: 'Standard issue neural-linked operative vehicle.' },
+  { id: 'CYBER PHANTOM', name: 'CYBER PHANTOM', price: 50, bodyColor: 0x4a0082, glowColor: 0xff00ff, description: 'Low-profile stealth chassis with neon-pink stabilizers.' },
+  { id: 'GOLDEN CIRCUIT', name: 'GOLDEN CIRCUIT', price: 100, bodyColor: 0xffd700, glowColor: 0xffffff, description: 'Experimental high-yield gold plating for the elite.' },
+  { id: 'VOID STALKER', name: 'VOID STALKER', price: 200, bodyColor: 0x111111, glowColor: 0xff0000, description: 'Blackened titanium hull designed for high-risk extraction.' },
+  { id: 'CONCRETE KING', name: 'CONCRETE KING', price: 500, bodyColor: 0xffffff, glowColor: 0xffff00, description: 'White pearl SUV with a rainbow stripe. The pinnacle of engineering.' },
+  { id: 'NEON GHOST', name: 'NEON GHOST', price: 150, bodyColor: 0x00ffff, glowColor: 0xffffff, description: 'Translucent blue body with a haunting white outline.' },
+  { id: 'INFERNO RUNNER', name: 'INFERNO RUNNER', price: 250, bodyColor: 0x8b0000, glowColor: 0xff6600, description: 'Deep red sports car with blazing orange flame decals.' },
+  { id: 'ARCTIC WOLF', name: 'ARCTIC WOLF', price: 300, bodyColor: 0xf0f8ff, glowColor: 0x00bfff, description: 'Ice white sedan with intricate blue frost patterns.' },
+  { id: 'SHADOW BLADE', name: 'SHADOW BLADE', price: 350, bodyColor: 0x006400, glowColor: 0x32cd32, description: 'Dark green military-grade chassis with sharp tactical edges.' },
+  { id: 'TOXIC RACER', name: 'TOXIC RACER', price: 400, bodyColor: 0x32cd32, glowColor: 0x000000, description: 'Lime green body featuring black toxic radiation symbols.' },
+  { id: 'CHROME DEMON', name: 'CHROME DEMON', price: 450, bodyColor: 0xc0c0c0, glowColor: 0xff0000, description: 'Mirror chrome finish with aggressive devil horn details.' },
+  { id: 'CONCRETE LEGEND', name: 'CONCRETE LEGEND', price: 1000, bodyColor: 0x000000, glowColor: 0xffd700, description: 'Rarest luxury supercar. Black and gold with a large Concrete logo.' }
 ];
 
 interface GarageProps {

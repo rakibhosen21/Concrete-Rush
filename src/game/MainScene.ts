@@ -3,11 +3,18 @@ import { PLAYER_CONFIG } from '../constants';
 import { AudioService } from './AudioService';
 
 const SKINS = {
-  'NEURAL RUNNER': { body: 0x050505, glow: 0x00f0ff },
-  'CYBER PHANTOM': { body: 0x2a0033, glow: 0xff00ff },
-  'GOLDEN CIRCUIT': { body: 0x3d3500, glow: 0xfacc15 },
-  'VOID STALKER': { body: 0x000000, glow: 0xff0000 },
-  'CONCRETE KING': { body: 0xffffff, glow: 0x00ffff }
+  'NEURAL RUNNER': { body: 0x333333, glow: 0x00f0ff },
+  'CYBER PHANTOM': { body: 0x4a0082, glow: 0xff00ff },
+  'GOLDEN CIRCUIT': { body: 0xffd700, glow: 0xffffff },
+  'VOID STALKER': { body: 0x111111, glow: 0xff0000 },
+  'CONCRETE KING': { body: 0xffffff, glow: 0xffff00 },
+  'NEON GHOST': { body: 0x00ffff, glow: 0xffffff },
+  'INFERNO RUNNER': { body: 0x8b0000, glow: 0xff6600 },
+  'ARCTIC WOLF': { body: 0xf0f8ff, glow: 0x00bfff },
+  'SHADOW BLADE': { body: 0x006400, glow: 0x32cd32 },
+  'TOXIC RACER': { body: 0x32cd32, glow: 0x000000 },
+  'CHROME DEMON': { body: 0xc0c0c0, glow: 0xff0000 },
+  'CONCRETE LEGEND': { body: 0x000000, glow: 0xffd700 }
 };
 
 export default class MainScene extends Phaser.Scene {
@@ -94,26 +101,114 @@ export default class MainScene extends Phaser.Scene {
     boostCtx.fill();
     boostCanvas.refresh();
 
-    // car-tex: player car
-    const carCanvas = this.textures.createCanvas('car-tex', 48, 90);
-    const carCtx = carCanvas.getContext();
-    // Car body
-    carCtx.fillStyle = '#111111';
-    // Fallback for roundRect if not supported
-    if (typeof carCtx.roundRect === 'function') {
-        carCtx.roundRect(4, 8, 40, 74, 8);
-    } else {
-        carCtx.rect(4, 8, 40, 74);
-    }
-    carCtx.fill();
-    // Windshield
-    carCtx.fillStyle = '#00f0ff';
-    carCtx.fillRect(10, 15, 28, 20);
-    // Tail lights
-    carCtx.fillStyle = '#ff0000';
-    carCtx.fillRect(6, 75, 12, 8);
-    carCtx.fillRect(30, 75, 12, 8);
-    carCanvas.refresh();
+    // Generate Car Textures for all skins
+    Object.entries(SKINS).forEach(([id, config]) => {
+        const carCanvas = this.textures.createCanvas(`car-${id}`, 48, 90);
+        const carCtx = carCanvas.getContext();
+        const bodyHex = '#' + config.body.toString(16).padStart(6, '0');
+        const glowHex = '#' + config.glow.toString(16).padStart(6, '0');
+
+        // Car body
+        carCtx.fillStyle = bodyHex;
+        if (typeof carCtx.roundRect === 'function') {
+            carCtx.roundRect(4, 8, 40, 74, 8);
+        } else {
+            carCtx.rect(4, 8, 40, 74);
+        }
+        carCtx.fill();
+
+        // Specific decals based on skin
+        if (id === 'GOLDEN CIRCUIT') {
+            carCtx.strokeStyle = '#ffffff';
+            carCtx.lineWidth = 1;
+            carCtx.beginPath();
+            for(let i=10; i<80; i+=20) {
+                carCtx.moveTo(4, i);
+                carCtx.lineTo(44, i+10);
+            }
+            carCtx.stroke();
+        } else if (id === 'VOID STALKER') {
+            carCtx.fillStyle = '#ff0000';
+            carCtx.fillRect(10, 40, 28, 2);
+            carCtx.fillRect(10, 50, 28, 2);
+        } else if (id === 'CONCRETE KING') {
+            const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8b00ff'];
+            colors.forEach((c, i) => {
+                carCtx.fillStyle = c;
+                carCtx.fillRect(4 + (i * 5.7), 8, 5.7, 74);
+            });
+            carCtx.fillStyle = bodyHex;
+            carCtx.fillRect(10, 15, 28, 60);
+        } else if (id === 'NEON GHOST') {
+            carCtx.strokeStyle = '#ffffff';
+            carCtx.lineWidth = 2;
+            carCtx.strokeRect(6, 10, 36, 70);
+        } else if (id === 'INFERNO RUNNER') {
+            carCtx.fillStyle = '#ff6600';
+            carCtx.beginPath();
+            carCtx.moveTo(4, 80);
+            carCtx.lineTo(10, 50);
+            carCtx.lineTo(24, 70);
+            carCtx.lineTo(38, 50);
+            carCtx.lineTo(44, 80);
+            carCtx.fill();
+        } else if (id === 'ARCTIC WOLF') {
+            carCtx.fillStyle = '#00bfff';
+            carCtx.globalAlpha = 0.3;
+            for(let i=0; i<10; i++) {
+                carCtx.fillRect(Math.random()*40, Math.random()*80, 5, 5);
+            }
+            carCtx.globalAlpha = 1.0;
+        } else if (id === 'TOXIC RACER') {
+            carCtx.fillStyle = '#000000';
+            carCtx.beginPath();
+            carCtx.arc(24, 45, 10, 0, Math.PI*2);
+            carCtx.fill();
+            carCtx.strokeStyle = '#32cd32';
+            carCtx.stroke();
+        } else if (id === 'CHROME DEMON') {
+            carCtx.fillStyle = '#ff0000';
+            carCtx.beginPath();
+            carCtx.moveTo(4, 8); carCtx.lineTo(0, 0); carCtx.lineTo(10, 8);
+            carCtx.moveTo(44, 8); carCtx.lineTo(48, 0); carCtx.lineTo(38, 8);
+            carCtx.fill();
+        }
+
+        // BRANDING: "CONCRETE" text
+        carCtx.fillStyle = (id === 'GOLDEN CIRCUIT' || id === 'TOXIC RACER') ? '#000000' : '#ffffff';
+        if (id === 'INFERNO RUNNER') carCtx.fillStyle = '#ff6600';
+        if (id === 'ARCTIC WOLF') carCtx.fillStyle = '#00bfff';
+        if (id === 'CONCRETE LEGEND') carCtx.fillStyle = '#ffd700';
+        
+        carCtx.font = id === 'CONCRETE LEGEND' ? 'bold 10px Arial' : '8px monospace';
+        carCtx.textAlign = 'center';
+        
+        if (id === 'CONCRETE LEGEND') {
+            carCtx.fillText('CONCRETE', 24, 25);
+            carCtx.fillText('LEGEND', 24, 35);
+        } else if (id === 'CONCRETE KING') {
+             carCtx.fillStyle = '#ffd700';
+             carCtx.fillText('CONCRETE', 24, 15);
+        } else if (id === 'SHADOW BLADE') {
+            carCtx.font = 'bold 8px Courier';
+            carCtx.fillText('CONCRETE', 24, 45);
+        } else {
+            carCtx.fillText('CONCRETE', 24, 45);
+        }
+
+        // Windshield
+        carCtx.fillStyle = '#00f0ff';
+        carCtx.globalAlpha = 0.6;
+        carCtx.fillRect(10, 15, 28, 20);
+        carCtx.globalAlpha = 1.0;
+
+        // Tail lights
+        carCtx.fillStyle = '#ff0000';
+        carCtx.fillRect(6, 75, 12, 8);
+        carCtx.fillRect(30, 75, 12, 8);
+        
+        carCanvas.refresh();
+    });
   }
 
   create() {
@@ -446,7 +541,7 @@ export default class MainScene extends Phaser.Scene {
     const skinId = userStats?.equippedSkin || 'NEURAL RUNNER';
     const skin = (SKINS as any)[skinId] || SKINS['NEURAL RUNNER'];
 
-    const carSprite = this.add.image(0, 0, 'car-tex').setScale(1.1);
+    const carSprite = this.add.image(0, 0, `car-${skinId}`).setScale(1.1);
     const glow = this.add.pointlight(0, 0, skin.glow, 80, 0.2); // Reduced intensity for visibility
     
     this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [glow, carSprite]);
@@ -752,6 +847,19 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.updateObjectsPerspective(delta);
+
+    // Rainbow Exhaust for CONCRETE LEGEND
+    if (this.trailEmitter) {
+        const userStats = this.game.registry.get('userStats');
+        if (userStats?.equippedSkin === 'CONCRETE LEGEND') {
+            const colors = [0xff0000, 0xffa500, 0xffff00, 0x00ff00, 0x0000ff, 0x4b0082, 0xee82ee];
+            const color = colors[Math.floor(time / 100) % colors.length];
+            this.trailEmitter.setParticleTint(color);
+        } else {
+            const skin = (SKINS as any)[userStats?.equippedSkin || 'NEURAL RUNNER'] || SKINS['NEURAL RUNNER'];
+            this.trailEmitter.setParticleTint(skin.glow);
+        }
+    }
 
     // Update HUD
     if (this.scoreText) this.scoreText.setText(`SCORE: ${this.score}`);

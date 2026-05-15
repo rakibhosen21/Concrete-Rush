@@ -20,7 +20,8 @@ const INITIAL_STATS = {
   bestDistance: 0,
   gamesPlayed: 0,
   unlockedSkins: ['NEURAL RUNNER'],
-  equippedSkin: 'NEURAL RUNNER'
+  equippedSkin: 'NEURAL RUNNER',
+  version: 2
 };
 
 export default function App() {
@@ -38,7 +39,20 @@ export default function App() {
     // Lead stats from local storage
     const savedStats = localStorage.getItem('concrete_user_stats');
     if (savedStats) {
-      setUserStats(JSON.parse(savedStats));
+      let stats = JSON.parse(savedStats);
+      // Migration: Clear old skins, keep progress
+      if (!stats.version || stats.version < 2) {
+        stats = {
+          ...INITIAL_STATS,
+          totalCoins: stats.totalCoins || 0,
+          bestScore: stats.bestScore || 0,
+          bestDistance: stats.bestDistance || 0,
+          gamesPlayed: stats.gamesPlayed || 0,
+          version: 2
+        };
+        localStorage.setItem('concrete_user_stats', JSON.stringify(stats));
+      }
+      setUserStats(stats);
     } else {
       setUserStats(INITIAL_STATS);
       localStorage.setItem('concrete_user_stats', JSON.stringify(INITIAL_STATS));
