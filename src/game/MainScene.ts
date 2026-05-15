@@ -54,12 +54,75 @@ export default class MainScene extends Phaser.Scene {
     super('MainScene');
   }
 
+  preload() {
+    // coin-tex: yellow circle with $C text
+    const coinCanvas = this.textures.createCanvas('coin-tex', 60, 60);
+    const coinCtx = coinCanvas.getContext();
+    coinCtx.fillStyle = '#FFD700';
+    coinCtx.beginPath();
+    coinCtx.arc(30, 30, 28, 0, Math.PI * 2);
+    coinCtx.fill();
+    coinCtx.strokeStyle = '#FFF';
+    coinCtx.lineWidth = 2;
+    coinCtx.stroke();
+    coinCtx.fillStyle = '#000';
+    coinCtx.font = 'bold 14px monospace';
+    coinCtx.textAlign = 'center';
+    coinCtx.textBaseline = 'middle';
+    coinCtx.fillText('$C', 30, 30);
+    coinCanvas.refresh();
+
+    // light-trail: small white dot
+    const trailCanvas = this.textures.createCanvas('light-trail', 8, 8);
+    const trailCtx = trailCanvas.getContext();
+    trailCtx.fillStyle = '#ffffff';
+    trailCtx.beginPath();
+    trailCtx.arc(4, 4, 4, 0, Math.PI * 2);
+    trailCtx.fill();
+    trailCanvas.refresh();
+
+    // boost-tex: green diamond
+    const boostCanvas = this.textures.createCanvas('boost-tex', 40, 40);
+    const boostCtx = boostCanvas.getContext();
+    boostCtx.fillStyle = '#00ff88';
+    boostCtx.beginPath();
+    boostCtx.moveTo(20, 0);
+    boostCtx.lineTo(40, 20);
+    boostCtx.lineTo(20, 40);
+    boostCtx.lineTo(0, 20);
+    boostCtx.closePath();
+    boostCtx.fill();
+    boostCanvas.refresh();
+
+    // car-tex: player car
+    const carCanvas = this.textures.createCanvas('car-tex', 48, 90);
+    const carCtx = carCanvas.getContext();
+    // Car body
+    carCtx.fillStyle = '#111111';
+    // Fallback for roundRect if not supported
+    if (typeof carCtx.roundRect === 'function') {
+        carCtx.roundRect(4, 8, 40, 74, 8);
+    } else {
+        carCtx.rect(4, 8, 40, 74);
+    }
+    carCtx.fill();
+    // Windshield
+    carCtx.fillStyle = '#00f0ff';
+    carCtx.fillRect(10, 15, 28, 20);
+    // Tail lights
+    carCtx.fillStyle = '#ff0000';
+    carCtx.fillRect(6, 75, 12, 8);
+    carCtx.fillRect(30, 75, 12, 8);
+    carCanvas.refresh();
+  }
+
   create() {
     this.cameras.main.setBackgroundColor('#87CEEB'); // Day Sky Blue
     
     this.roadGraphics = this.add.graphics().setDepth(-10);
     this.createSkyline();
-    this.createRoad();
+    this.createRoad(); // Ensures road is drawn immediately
+    this.drawPseudo3DRoad(); // Initial draw
     this.createTextures();
     this.createPlayer();
     
@@ -121,9 +184,24 @@ export default class MainScene extends Phaser.Scene {
 
     // Inputs
     this.setupInputs();
-    this.game.events.on('move-car', (dir: number) => this.moveLane(dir));
-    this.game.events.on('resume-game', () => {
+    
+    const moveHandler = (dir: number) => {
+        if (!this || !this.sys || !this.sys.isActive()) return;
+        this.moveLane(dir);
+    };
+    const resumeHandler = () => {
+        if (!this || !this.sys || !this.sys.isActive()) return;
         if (this.isPaused) this.togglePause();
+    };
+
+    this.game.events.on('move-car', moveHandler);
+    this.game.events.on('resume-game', resumeHandler);
+
+    this.events.once('shutdown', () => {
+        if (this.game && this.game.events) {
+            this.game.events.off('move-car', moveHandler);
+            this.game.events.off('resume-game', resumeHandler);
+        }
     });
 
     // Audio
@@ -224,11 +302,13 @@ export default class MainScene extends Phaser.Scene {
 
     // Swipe & Touch
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (!this || !this.sys || !this.sys.isActive()) return;
       this.swipeStartX = pointer.x;
-      this.swipeStartTime = this.time.now;
+      if (this.time) this.swipeStartTime = this.time.now;
     });
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (!this || !this.sys || !this.sys.isActive() || !this.time) return;
       const elapsed = this.time.now - this.swipeStartTime;
       const distance = pointer.x - this.swipeStartX;
 
@@ -244,6 +324,7 @@ export default class MainScene extends Phaser.Scene {
 
     // Jump fallback (Single tap top area or space)
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        if (!this || !this.sys || !this.sys.isActive()) return;
         if (pointer.y < this.scale.height * 0.3) {
             this.jump();
         }
@@ -263,6 +344,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   public togglePause() {
+    if (!this || !this.sys || !this.sys.isActive()) return;
     this.isPaused = !this.isPaused;
     this.game.events.emit('game-paused', this.isPaused);
     if (this.isPaused) {
@@ -277,50 +359,74 @@ export default class MainScene extends Phaser.Scene {
     const skinId = userStats?.equippedSkin || 'NEURAL RUNNER';
     const skin = (SKINS as any)[skinId] || SKINS['NEURAL RUNNER'];
 
-    // Player Cyber Car Texture - REAR VIEW Detailed
+    // Player Cyber Car Texture - Top-Down Lamborghini Style
     const carGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
     
-    // Main Body (Rear View)
-    carGraphics.fillStyle(skin.body, 1);
-    carGraphics.fillRoundedRect(5, 20, 60, 40, 8); // Rear bumper area
-    carGraphics.fillRoundedRect(10, 0, 50, 30, 10); // Upper cabin area
-    
-    // Rear Window
-    carGraphics.fillStyle(0x050510, 1);
-    carGraphics.fillRoundedRect(15, 5, 40, 15, 4);
-    
-    // Tail Lights (Glow)
-    carGraphics.fillStyle(0xff0000, 1);
-    carGraphics.fillRoundedRect(10, 25, 12, 6, 2);
-    carGraphics.fillRoundedRect(48, 25, 12, 6, 2);
-    
-    // Glow accents
-    carGraphics.lineStyle(2, skin.glow, 0.6);
-    carGraphics.strokeRoundedRect(5, 20, 60, 40, 8);
-    carGraphics.strokeRoundedRect(10, 0, 50, 30, 10);
+    const drawLambo = (g: Phaser.GameObjects.Graphics, bodyColor: number, isPlayer: boolean) => {
+        // Main Body - Sleek Top-Down
+        g.fillStyle(bodyColor, 1);
+        
+        // Body base (angular)
+        g.beginPath();
+        g.moveTo(25, 0);   // Nose
+        g.lineTo(45, 15);  // Front Right
+        g.lineTo(50, 75);  // Rear Right
+        g.lineTo(40, 95);  // Bottom Right
+        g.lineTo(10, 95);  // Bottom Left
+        g.lineTo(0, 75);   // Rear Left
+        g.lineTo(5, 15);   // Front Left
+        g.closePath();
+        g.fillPath();
 
-    // License Plate
-    carGraphics.fillStyle(0xfacc15, 1);
-    carGraphics.fillRect(28, 48, 14, 6);
+        // Windshield (Angular)
+        g.fillStyle(0x0a0a0a, 0.9);
+        g.beginPath();
+        g.moveTo(25, 25);
+        g.lineTo(40, 35);
+        g.lineTo(38, 55);
+        g.lineTo(12, 55);
+        g.lineTo(10, 35);
+        g.closePath();
+        g.fillPath();
 
-    carGraphics.generateTexture('player-car', 70, 65);
+        // Side Mirrors
+        g.fillStyle(bodyColor, 1);
+        g.fillRect(-2, 35, 6, 4);
+        g.fillRect(46, 35, 6, 4);
 
-    // Light trail
-    const trailGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    trailGraphics.fillStyle(skin.glow, 0.6);
-    trailGraphics.fillRect(0, 0, 4, 8);
-    trailGraphics.generateTexture('light-trail', 4, 8);
+        // Hood Lines
+        g.lineStyle(2, 0x000000, 0.3);
+        g.beginPath();
+        g.moveTo(25, 5);
+        g.lineTo(25, 20);
+        g.strokePath();
+
+        // Rear Tail Lights (RED)
+        g.fillStyle(0xff0000, 1);
+        g.fillRect(5, 90, 8, 4);
+        g.fillRect(37, 90, 8, 4);
+
+        // Front Headlights (SMALL CYAN DOTS)
+        g.fillStyle(0x00f0ff, 1);
+        g.fillCircle(12, 18, 2);
+        g.fillCircle(38, 18, 2);
+    };
+
+    drawLambo(carGraphics, skin.body, true);
+    carGraphics.generateTexture('player-car', 50, 95);
+
+    // Enemy Car Textures
+    const enemyColors = [0xef4444, 0x3b82f6, 0xffffff, 0x94a3b8, 0xf97316];
+    enemyColors.forEach((color, idx) => {
+        const eg = this.make.graphics({ x: 0, y: 0, add: false } as any);
+        drawLambo(eg, color, false);
+        eg.generateTexture(`enemy-car-${idx}`, 50, 95);
+    });
 
     // Obstacle - Rear View Car
     const enemyGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    enemyGraphics.fillStyle(0x1a1a1a, 1);
-    enemyGraphics.fillRoundedRect(0, 10, 60, 40, 6);
-    enemyGraphics.fillStyle(0x333333, 1);
-    enemyGraphics.fillRoundedRect(5, 0, 50, 20, 8);
-    enemyGraphics.fillStyle(0xff0000, 1); 
-    enemyGraphics.fillRect(5, 20, 10, 4);
-    enemyGraphics.fillRect(45, 20, 10, 4);
-    enemyGraphics.generateTexture('enemy-car', 60, 50);
+    drawLambo(enemyGraphics, 0x1a1a1a, false);
+    enemyGraphics.generateTexture('enemy-car', 50, 95);
 
     // Barrier Obstacle
     const barGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
@@ -329,44 +435,6 @@ export default class MainScene extends Phaser.Scene {
     barGraphics.fillStyle(0xffff00);
     for(let i=0; i<5; i++) barGraphics.fillRect(i*20, 20, 10, 30);
     barGraphics.generateTexture('barrier', 100, 50);
-
-    // Coin Texture
-    const coinTex = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    coinTex.fillStyle(0xfacc15, 1);
-    coinTex.fillCircle(25, 25, 25);
-    coinTex.lineStyle(3, 0xffffff, 0.5);
-    coinTex.strokeCircle(25, 25, 23);
-    coinTex.generateTexture('coin-base', 50, 50);
-
-    // Final Coin Texture with Text
-    const coinFinal = this.add.container(0, 0);
-    const base = this.add.image(25, 25, 'coin-base');
-    const txt = this.add.text(25, 25, '$C', { 
-        fontSize: '18px', 
-        fontFamily: 'monospace', 
-        color: '#000000', 
-        fontStyle: 'bold' 
-    }).setOrigin(0.5);
-    coinFinal.add([base, txt]);
-    
-    const rt = this.add.renderTexture(0, 0, 50, 50);
-    rt.draw(coinFinal);
-    rt.saveTexture('coin-tex');
-    coinFinal.destroy();
-
-    // Speed Boost - Green Diamond
-    const boostGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    boostGraphics.fillStyle(0x22c55e, 1);
-    boostGraphics.beginPath();
-    boostGraphics.moveTo(25, 0);
-    boostGraphics.lineTo(50, 25);
-    boostGraphics.lineTo(25, 50);
-    boostGraphics.lineTo(0, 25);
-    boostGraphics.closePath();
-    boostGraphics.fillPath();
-    boostGraphics.lineStyle(2, 0xffffff, 0.8);
-    boostGraphics.strokePath();
-    boostGraphics.generateTexture('boost-tex', 50, 50);
   }
 
   private createRoad() {
@@ -378,10 +446,10 @@ export default class MainScene extends Phaser.Scene {
     const skinId = userStats?.equippedSkin || 'NEURAL RUNNER';
     const skin = (SKINS as any)[skinId] || SKINS['NEURAL RUNNER'];
 
-    const carSprite = this.add.image(0, 0, 'player-car').setScale(1.1);
-    const glow = this.add.pointlight(0, 0, skin.glow, 100, 0.4);
+    const carSprite = this.add.image(0, 0, 'car-tex').setScale(1.1);
+    const glow = this.add.pointlight(0, 0, skin.glow, 80, 0.2); // Reduced intensity for visibility
     
-    this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [carSprite, glow]);
+    this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [glow, carSprite]);
     this.vehicle.setSize(48, 90);
     this.vehicle.setDepth(50);
     this.physics.world.enable(this.vehicle);
@@ -398,6 +466,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private moveLane(dir: number) {
+    if (!this || !this.sys || !this.sys.isActive() || this.isGameOver || this.isPaused) return;
     const nextLane = Phaser.Math.Clamp(this.currentLane + dir, 0, 2);
     if (nextLane !== this.currentLane) {
       const prevLane = this.currentLane;
@@ -421,7 +490,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   public jump() {
-    if (this.isJumping || this.isPaused) return;
+    if (!this || !this.sys || !this.sys.isActive() || this.isJumping || this.isPaused) return;
     this.isJumping = true;
     
     AudioService.playBoost();
@@ -443,16 +512,22 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private spawnObstacle() {
-    if (this.isGameOver || this.isPaused) return;
+    if (!this || !this.sys || !this.sys.isActive() || this.isGameOver || this.isPaused) return;
     const lane = Phaser.Math.Between(0, 2);
-    const type = Math.random() > 0.5 ? 'enemy-car' : 'barrier';
+    
+    // Choose between a barrier or a traffic car
+    let type = 'barrier';
+    if (Math.random() > 0.4) {
+        type = `enemy-car-${Phaser.Math.Between(0, 4)}`;
+    }
+    
     const obs = this.obstacles.create(0, 0, type);
     obs.setData('z', 0.01);
     obs.setData('lane', lane);
   }
 
   private spawnItem() {
-    if (this.isGameOver || this.isPaused) return;
+    if (!this || !this.sys || !this.sys.isActive() || this.isGameOver || this.isPaused) return;
     const lane = Phaser.Math.Between(0, 2);
     const type = Math.random() > 0.1 ? 'coin-tex' : 'boost-tex';
     const item = this.items.create(0, 0, type);
@@ -462,7 +537,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private handleObstacleCollision(car: any, obstacle: any) {
-    if (this.isJumping) return;
+    if (!this || !this.sys || !this.sys.isActive() || this.isJumping) return;
     
     const ox = obstacle.x;
     const oy = obstacle.y;
@@ -494,6 +569,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private handleItemCollision(car: any, item: any) {
+    if (!this || !this.sys || !this.sys.isActive()) return;
     const type = item.getData('type');
     
     if (type === 'COIN') {
@@ -549,6 +625,7 @@ export default class MainScene extends Phaser.Scene {
     this.isPaused = true;
     AudioService.playGameOver();
     AudioService.stopEngine();
+    AudioService.stopGameBGM(); // Stop game BGM on death
     
     this.game.events.emit('game-over', {
         score: this.score,
@@ -566,24 +643,28 @@ export default class MainScene extends Phaser.Scene {
     g.clear();
     
     // Draw Main Asphalt (Trapezoid) - Light Grey
+    const roadWFactor = 0.65; // 65% width
+    const currentRoadWidthBottom = width * roadWFactor;
+    const currentRoadWidthTop = this.roadWidthTop;
+
     g.fillStyle(0x888888, 1);
     g.beginPath();
-    g.moveTo(centerX - this.roadWidthTop / 2, this.horizonY);
-    g.lineTo(centerX + this.roadWidthTop / 2, this.horizonY);
-    g.lineTo(centerX + this.roadWidthBottom / 2, height);
-    g.lineTo(centerX - this.roadWidthBottom / 2, height);
+    g.moveTo(centerX - currentRoadWidthTop / 2, this.horizonY);
+    g.lineTo(centerX + currentRoadWidthTop / 2, this.horizonY);
+    g.lineTo(centerX + currentRoadWidthBottom / 2, height);
+    g.lineTo(centerX - currentRoadWidthBottom / 2, height);
     g.closePath();
     g.fillPath();
 
     // Road Edges (Rumble strips)
-    this.drawRoadLines(g, centerX, 0.48, 0.52, true);
+    this.drawRoadLines(g, centerX, currentRoadWidthBottom, 0.48, 0.52, true);
 
     // Lane Lines (White Dashed)
-    this.drawRoadLines(g, centerX, 0.15, 0.17, false);
-    this.drawRoadLines(g, centerX, -0.15, -0.17, false);
+    this.drawRoadLines(g, centerX, currentRoadWidthBottom, 0.15, 0.17, false);
+    this.drawRoadLines(g, centerX, currentRoadWidthBottom, -0.15, -0.17, false);
   }
 
-  private drawRoadLines(g: Phaser.GameObjects.Graphics, centerX: number, leftRel: number, rightRel: number, isEdge: boolean) {
+  private drawRoadLines(g: Phaser.GameObjects.Graphics, centerX: number, roadWidth: number, leftRel: number, rightRel: number, isEdge: boolean) {
     const segments = 12;
     const { height } = this.scale;
 
@@ -594,7 +675,7 @@ export default class MainScene extends Phaser.Scene {
         if (z1 > 1) continue;
 
         const getY = (z: number) => this.horizonY + (height - this.horizonY) * z;
-        const getX = (z: number, rel: number) => centerX + (this.roadWidthBottom * z * rel);
+        const getX = (z: number, rel: number) => centerX + (roadWidth * z * rel);
 
         const y1 = getY(z1);
         const y2 = getY(z2);
@@ -613,10 +694,12 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private updateObjectsPerspective(delta: number) {
+    if (!this || !this.sys || !this.sys.isActive()) return;
     const { width, height } = this.scale;
     const centerX = width / 2;
     const speedMod = (this.multiplierActive ? 2.5 : 1) * (1 + (this.score / 2000));
     const zStep = 0.0004 * delta * speedMod;
+    const roadWidth = width * 0.65;
 
     [...this.obstacles.getChildren(), ...this.items.getChildren()].forEach((obj: any) => {
         let z = obj.getData('z') || 0;
@@ -624,7 +707,7 @@ export default class MainScene extends Phaser.Scene {
         obj.setData('z', z);
 
         const targetY = this.horizonY + (height - this.horizonY) * z;
-        const screenX = centerX + ((obj.getData('lane') - 1) * (this.roadWidthBottom * 0.3 * z));
+        const screenX = centerX + ((obj.getData('lane') - 1) * (roadWidth * 0.3 * z));
         
         obj.x = screenX;
         obj.y = targetY;
@@ -641,7 +724,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
-    if (this.isPaused) return;
+    if (!this || !this.sys || !this.sys.isActive() || this.isPaused) return;
 
     const speedMod = (this.multiplierActive ? 2.5 : 1) * (1 + (this.score / 2000));
     const scrollAmount = this.speed * speedMod * delta / 1000;
@@ -655,7 +738,8 @@ export default class MainScene extends Phaser.Scene {
     this.drawPseudo3DRoad();
 
     // Player and Parallax
-    const targetX = (this.scale.width / 2) + ((this.currentLane - 1) * (this.roadWidthBottom * 0.3 * 0.85)); // 0.85 is player Z approx
+    const roadWidth = this.scale.width * 0.65;
+    const targetX = (this.scale.width / 2) + ((this.currentLane - 1) * (roadWidth * 0.3 * 0.85)); // 0.85 is player Z approx
     this.vehicle.x = Phaser.Math.Linear(this.vehicle.x, targetX, 0.1);
     
     const sprite = this.vehicle.getAt(0) as Phaser.GameObjects.Image;

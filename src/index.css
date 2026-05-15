@@ -38,25 +38,57 @@
     background: radial-gradient(circle, transparent 20%, black 100%);
   }
 
-  .shimmer {
+  .shimmer-anim {
+    animation: shimmer 3s infinite;
+  }
+
+  .glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  .gold-sweep {
     position: absolute;
     top: 0;
     left: -100%;
-    width: 100%;
+    width: 60px;
     height: 100%;
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.4),
       transparent
     );
-    /* animation: shimmer 4s infinite; */
+    animation: gold-sweep 4s infinite;
   }
 }
 
-@keyframes shimmer {
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(250, 204, 21, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(250, 204, 21, 0.6); }
+}
+
+@keyframes gold-sweep {
   0% { left: -100%; }
-  100% { left: 150%; }
+  30%, 100% { left: 200%; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-150%); }
+  50%, 100% { transform: translateX(150%); }
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.glitch-hover:hover .glitch-text {
+  animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  text-shadow: 2px 0 #00f0ff, -2px 0 #ff00ff;
 }
 
 @layer utilities {

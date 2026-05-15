@@ -64,9 +64,9 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
   useEffect(() => {
     const handlePhaserResume = () => {
-        if (gameRef.current && gameState === 'PLAYING') {
+        if (gameRef.current && gameRef.current.scene && gameState === 'PLAYING') {
             const scene = gameRef.current.scene.getScene('MainScene') as MainScene;
-            if (scene) {
+            if (scene && scene.sys && scene.sys.isActive()) {
                 gameRef.current.events.emit('resume-game');
             }
         }

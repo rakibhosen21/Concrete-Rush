@@ -5,9 +5,9 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
   width: 720,
   height: 1280,
   parent: 'game-container',
-  transparent: true,
+  transparent: false,
   scale: {
-    mode: Phaser.Scale.WIDTH_CONTROLS_HEIGHT,
+    mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
   physics: {

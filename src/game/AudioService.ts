@@ -165,6 +165,10 @@ export class AudioService {
     this.musicIntervals.push(setInterval(playKick, 2000));
   }
 
+  static stopLandingBGM() {
+    this.stopBGM();
+  }
+
   static startGameBGM() {
     if (this.isGameMuted) return;
     this.init();
@@ -251,6 +255,10 @@ export class AudioService {
     };
 
     this.musicIntervals.push(setInterval(sequencer, (quarterTime / 2) * 1000));
+  }
+
+  static stopGameBGM() {
+    this.stopBGM();
   }
 
   static startBGM() {
