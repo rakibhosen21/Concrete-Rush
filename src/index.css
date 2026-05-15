@@ -9,8 +9,14 @@
   body {
     @apply bg-black text-white antialiased;
     margin: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: pan-y;
   }
+}
+
+* {
+  box-sizing: border-box;
 }
 
 @layer components {

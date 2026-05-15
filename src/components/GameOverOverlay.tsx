@@ -5,15 +5,16 @@ import { COLORS } from '../constants';
 
 interface GameOverOverlayProps {
   score: number;
+  cCollected: number;
   distance: number;
   multiplier: number;
   onRestart: () => void;
   onHome: () => void;
+  userStats?: any;
 }
 
-export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, distance, multiplier, onRestart, onHome }) => {
+export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, cCollected, distance, multiplier, onRestart, onHome, userStats }) => {
   const profile = JSON.parse(localStorage.getItem('concrete_profile') || '{}');
-  const highScore = parseInt(localStorage.getItem('concrete_high_score') || '0');
   const [copied, setCopied] = useState(false);
   
   const getGrade = (s: number) => {
@@ -25,7 +26,8 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, distanc
   };
 
   const grade = getGrade(score);
-
+  const bestScore = userStats?.bestScore || score;
+  
   const handleShare = () => {
     const text = `Operative ${profile.name} complete. Yield capture: ${score}. Distance: ${distance}m. Node status: STABLE. Run concrete-rush.online`;
     navigator.clipboard.writeText(text);
@@ -63,26 +65,33 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, distanc
         >
            <div className="text-[10px] text-zinc-500 tracking-[0.4em] uppercase mb-2 font-black">Performance_Grade</div>
            <div className="text-6xl sm:text-8xl font-black italic text-yellow-400 leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.3)]">{grade.l}</div>
-           <div className="text-[10px] font-mono text-white/40 tracking-[0.2em] uppercase mt-2">{grade.d}</div>
+           <div className="text-[10px] sm:text-xs font-black italic text-yellow-400 leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.3)] mt-2">All-Time Best: {bestScore.toLocaleString()}</div>
         </motion.div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col items-center">
-            <span className="text-[8px] text-zinc-600 uppercase font-black mb-1 tracking-widest leading-none">Final Score</span>
+            <span className="text-[8px] text-zinc-600 uppercase font-black mb-1 tracking-widest leading-none">Yield Captured</span>
             <span className="text-2xl sm:text-3xl font-black italic text-white tabular-nums">{score.toLocaleString()}</span>
           </div>
-          <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col items-center">
-            <span className="text-[8px] text-zinc-600 uppercase font-black mb-1 tracking-widest leading-none">Distance (M)</span>
-            <span className="text-2xl sm:text-3xl font-black italic text-white tabular-nums">{distance}</span>
+          <div className="bg-black/40 p-4 rounded-xl border border-yellow-400/20 flex flex-col items-center">
+            <span className="text-[8px] text-yellow-500 uppercase font-black mb-1 tracking-widest leading-none">$C Collected</span>
+            <span className="text-2xl sm:text-3xl font-black italic text-yellow-400 tabular-nums">{cCollected}</span>
           </div>
-          <div className="bg-black/40 p-4 rounded-xl border border-yellow-400/10 flex flex-col items-center">
-            <span className="text-[8px] text-yellow-400/40 uppercase font-black mb-1 tracking-widest leading-none">High Score</span>
-            <span className="text-2xl sm:text-3xl font-black italic text-yellow-400 tabular-nums">{Math.max(score, highScore).toLocaleString()}</span>
-          </div>
-          <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col items-center">
-            <span className="text-[8px] text-zinc-600 uppercase font-black mb-1 tracking-widest leading-none">Peak Multiplier</span>
-            <span className="text-2xl sm:text-3xl font-black italic text-white tabular-nums">X{multiplier.toFixed(1)}</span>
-          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-8">
+            <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                <span className="text-[6px] text-zinc-500 uppercase font-black mb-1">Total Yield</span>
+                <span className="text-sm font-black italic text-zinc-300">{(userStats?.totalCoins || 0).toLocaleString()}</span>
+            </div>
+            <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                <span className="text-[6px] text-zinc-500 uppercase font-black mb-1">Total Games</span>
+                <span className="text-sm font-black italic text-zinc-300">{userStats?.gamesPlayed || 0}</span>
+            </div>
+            <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                <span className="text-[6px] text-zinc-500 uppercase font-black mb-1">Distance PB</span>
+                <span className="text-sm font-black italic text-zinc-300">{userStats?.bestDistance || 0}m</span>
+            </div>
         </div>
 
         <div className="space-y-3">

@@ -8,15 +8,17 @@ import { AudioService } from '../game/AudioService';
 
 interface GameContainerProps {
   onScoreUpdate: (score: number) => void;
+  onCCollectedUpdate: (c: number) => void;
   onHealthUpdate: (health: number) => void;
   onMultiplierUpdate: (multiplier: number) => void;
-  onGameOver: (data: { score: number; distance: number; multiplier: number }) => void;
+  onGameOver: (data: { score: number; cCollected: number; distance: number; multiplier: number }) => void;
   onPauseUpdate: (paused: boolean) => void;
   gameState: 'INTRO' | 'PROFILE_SETUP' | 'HOME' | 'PLAYING' | 'GAME_OVER';
 }
 
 export const GameContainer: React.FC<GameContainerProps> = ({
   onScoreUpdate,
+  onCCollectedUpdate,
   onHealthUpdate,
   onMultiplierUpdate,
   onGameOver,
@@ -36,6 +38,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       gameRef.current = game;
 
       game.events.on('update-score', onScoreUpdate);
+      game.events.on('update-c-collected', onCCollectedUpdate);
       game.events.on('update-health', onHealthUpdate);
       game.events.on('update-multiplier', onMultiplierUpdate);
       game.events.on('game-over', onGameOver);
@@ -97,11 +100,11 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-[95vw] sm:w-[85vw] md:w-[70vw] lg:w-[50vw] xl:w-[40vw] max-h-[85vh] lg:max-h-[80vh]">
-      <div className="w-full aspect-[2/3] relative flex-shrink min-h-0">
+    <div className="relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full max-w-[500px] h-full sm:h-auto">
+      <div className="w-full aspect-[9/16] relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,240,255,0.1)]">
         <div 
           id="game-container" 
-          className="w-full h-full relative shadow-[0_0_50px_rgba(0,240,255,0.3)] border-2 border-[#00f0ff]/30 rounded-lg overflow-hidden"
+          className="w-full h-full relative"
         />
 
         {/* Mute Button */}

@@ -35,7 +35,7 @@ export const SocialLinks: React.FC = () => {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.8 }}
-      className="w-full py-6 sm:py-12 flex flex-col items-center gap-6 sm:gap-10 relative z-10"
+      className="w-full py-6 sm:py-10 flex flex-col items-center gap-6 sm:gap-8 relative z-10"
     >
       <div className="flex flex-col items-center gap-2 px-6">
         <div className="flex items-center gap-4 w-full max-w-xs sm:max-w-sm">
@@ -45,14 +45,10 @@ export const SocialLinks: React.FC = () => {
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-yellow-400/30 to-transparent" />
         </div>
-        <div className="flex items-center gap-2 sm:gap-3 text-zinc-600 text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]">
-          <Users size={8} className="sm:w-[10px] sm:h-[10px]" />
-          <span>Active Community Rewards Live</span>
-        </div>
       </div>
 
-      <div className="flex items-center gap-4 sm:gap-8">
-        <div className="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-1 sm:p-2 rounded-[20px] sm:rounded-[28px] flex gap-1 sm:gap-2">
+      <div className="flex items-center gap-4 sm:gap-8 pointer-events-auto">
+        <div className="bg-zinc-900/40 backdrop-blur-3xl border border-white/5 p-2 rounded-[24px] sm:rounded-[32px] flex gap-2 sm:gap-3">
           {socials.map((social) => (
             <motion.a
               key={social.name}
@@ -62,10 +58,10 @@ export const SocialLinks: React.FC = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className={`
-                group relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 
-                bg-black/40 backdrop-blur-sm border border-white/5 
+                group relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 
+                bg-black/60 backdrop-blur-sm border border-white/10 
                 rounded-xl sm:rounded-2xl transition-all duration-300
-                hover:border-white/20
+                hover:border-yellow-400/40 hover:bg-black/80
               `}
             >
               {/* Hover Glow Effect */}

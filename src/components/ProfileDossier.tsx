@@ -5,9 +5,10 @@ import { User, Shield, BarChart3, RotateCcw, X, FileText } from 'lucide-react';
 interface ProfileDossierProps {
   onClose: () => void;
   onReset: () => void;
+  userStats?: any;
 }
 
-export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset }) => {
+export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset, userStats }) => {
   const profile = JSON.parse(localStorage.getItem('concrete_profile') || '{}');
   const highScore = localStorage.getItem('concrete_high_score') || '0';
   const totalYield = localStorage.getItem('concrete_total_yield') || '0';
@@ -72,13 +73,13 @@ export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset
                    <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Best_Yield_Record
                    </div>
-                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{parseInt(highScore).toLocaleString()}</div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{(userStats?.bestScore || 0).toLocaleString()}</div>
                 </div>
                 <div>
                    <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Best_Distance_M
                    </div>
-                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{(profile.bestDistance || 0).toLocaleString()}</div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{(userStats?.bestDistance || 0).toLocaleString()}</div>
                 </div>
              </div>
 
@@ -87,13 +88,13 @@ export const ProfileDossier: React.FC<ProfileDossierProps> = ({ onClose, onReset
                    <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Accumulated_Total
                    </div>
-                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{parseInt(totalYield).toLocaleString()}</div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{(userStats?.totalCoins || 0).toLocaleString()}</div>
                 </div>
                 <div>
                    <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1 sm:mb-2 flex items-center gap-2">
                      <div className="w-2 h-0.5 bg-yellow-400" /> Total_System_Runs
                    </div>
-                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{gamesPlayed} <span className="text-xs text-zinc-700">CYCLES</span></div>
+                   <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white tabular-nums">{userStats?.gamesPlayed || 0} <span className="text-xs text-zinc-700">CYCLES</span></div>
                 </div>
              </div>
           </div>

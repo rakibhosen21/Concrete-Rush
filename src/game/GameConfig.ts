@@ -2,12 +2,12 @@ import Phaser from 'phaser';
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: 600,
-  height: 900,
+  width: 720,
+  height: 1280,
   parent: 'game-container',
   transparent: true,
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.WIDTH_CONTROLS_HEIGHT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
   physics: {

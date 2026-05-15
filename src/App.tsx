@@ -1,37 +1,64 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { TrendingUp, User, Trophy, BarChart3 } from 'lucide-react';
+import { TrendingUp, User, BarChart3 } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { GameOverOverlay } from './components/GameOverOverlay';
 import { PauseOverlay } from './components/PauseOverlay';
 import { IntroLoader } from './components/IntroLoader';
 import { ProfileSetup } from './components/ProfileSetup';
-import { LeaderboardOverlay } from './components/LeaderboardOverlay';
 import { ProfileDossier } from './components/ProfileDossier';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AccountSetup } from './components/AccountSetup';
+import { Logo } from './components/Logo';
+import { SocialLinks } from './components/SocialLinks';
 
 const GameContainer = lazy(() => import('./components/GameContainer').then(m => ({ default: m.GameContainer })));
 
-export type GameState = 'INTRO' | 'PROFILE_SETUP' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+export type GameState = 'ACCOUNT_SETUP' | 'INTRO' | 'PROFILE_SETUP' | 'HOME' | 'PLAYING' | 'GAME_OVER';
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>('INTRO');
   const [score, setScore] = useState(0);
+  const [cCollected, setCCollected] = useState(0);
   const [health, setHealth] = useState(3);
   const [multiplier, setMultiplier] = useState(1);
-  const [gameOverData, setGameOverData] = useState<{ score: number; distance: number; multiplier: number } | null>(null);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [gameOverData, setGameOverData] = useState<{ score: number; cCollected: number; distance: number; multiplier: number } | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [userStats, setUserStats] = useState<any>(null);
 
   useEffect(() => {
+    const agentId = localStorage.getItem('concrete_agent_id');
+    if (agentId) {
+      fetchUserStats(agentId);
+    } else {
+      setGameState('ACCOUNT_SETUP');
+    }
+
     const savedProfile = localStorage.getItem('concrete_profile');
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
     }
   }, []);
+
+  const fetchUserStats = async (username: string) => {
+    try {
+      const res = await fetch(`/api/user/${username}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserStats(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch user stats');
+    }
+  };
+
+  const handleAccountComplete = (username: string) => {
+    fetchUserStats(username);
+    setGameState('INTRO');
+  };
 
   const handleProfileComplete = (newProfile: any) => {
     const fullProfile = {
@@ -51,60 +78,45 @@ export default function App() {
   const resetIdentity = () => {
     localStorage.clear();
     setProfile(null);
-    setGameState('PROFILE_SETUP');
+    setUserStats(null);
+    setGameState('ACCOUNT_SETUP');
     setShowProfile(false);
   };
 
-  const handleGameOver = (data: { score: number; distance: number; multiplier: number }) => {
+  const handleGameOver = async (data: { score: number; cCollected: number; distance: number; multiplier: number }) => {
     setScore(data.score);
+    setCCollected(data.cCollected);
     setGameOverData(data);
     
-    // Update stats
-    const currentProfile = JSON.parse(localStorage.getItem('concrete_profile') || '{}');
-    const newHighScore = Math.max(currentProfile.highScore || 0, data.score);
-    const newBestDistance = Math.max(currentProfile.bestDistance || 0, data.distance);
-    
-    const updatedProfile = {
-      ...currentProfile,
-      highScore: newHighScore,
-      bestDistance: newBestDistance,
-      totalYield: (currentProfile.totalYield || 0) + data.score,
-      gamesPlayed: (currentProfile.gamesPlayed || 0) + 1,
-      lastPlayedTime: Date.now()
-    };
-
-    setProfile(updatedProfile);
-    localStorage.setItem('concrete_profile', JSON.stringify(updatedProfile));
-    localStorage.setItem('concrete_high_score', newHighScore.toString());
-    localStorage.setItem('concrete_best_distance', newBestDistance.toString());
-
-    // Local Leaderboard
-    const leaderboard = JSON.parse(localStorage.getItem('concrete_leaderboard') || '[]');
-    const getGradeStr = (s: number) => {
-        if (s >= 200) return 'S';
-        if (s >= 101) return 'A';
-        if (s >= 51) return 'B';
-        if (s >= 21) return 'C';
-        return 'D';
-    };
-    
-    leaderboard.push({
-        name: profile?.name || 'Unknown',
-        avatar: profile?.avatar || '🤖',
-        score: data.score,
-        distance: data.distance,
-        grade: getGradeStr(data.score),
-        timestamp: Date.now()
-    });
-    // Keep only top 10
-    leaderboard.sort((a: any, b: any) => b.score - a.score);
-    localStorage.setItem('concrete_leaderboard', JSON.stringify(leaderboard.slice(0, 10)));
+    // Update stats on server
+    const agentId = localStorage.getItem('concrete_agent_id');
+    if (agentId) {
+      try {
+        const res = await fetch('/api/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: agentId,
+            score: data.score,
+            coinsCollected: data.cCollected,
+            distance: Math.floor(data.distance)
+          })
+        });
+        if (res.ok) {
+          const updatedUser = await res.json();
+          setUserStats(updatedUser.user);
+        }
+      } catch (err) {
+        console.error('Failed to update stats');
+      }
+    }
 
     setGameState('GAME_OVER');
   };
 
   const startGame = () => {
     setScore(0);
+    setCCollected(0);
     setHealth(3);
     setMultiplier(1);
     setIsPaused(false);
@@ -126,12 +138,34 @@ export default function App() {
     <ErrorBoundary>
       <div className="w-full h-svh bg-[#050208] text-white overflow-hidden select-none flex flex-col items-center justify-center relative">
         
-        {/* Top bar profile - always visible when active */}
+        {/* FIXED BRANDING HEADER - Always Visible */}
+        <div className="fixed top-0 left-0 right-0 z-[9999] p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+          <div className="flex items-center gap-4">
+            <div className="pointer-events-auto">
+              <Logo />
+            </div>
+            {userStats && (
+              <div className="hidden sm:flex flex-col pointer-events-auto">
+                <div className="text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Agent_Connected</div>
+                <div className="text-xs font-black italic text-cyan-400 uppercase tracking-widest">{userStats.username}</div>
+              </div>
+            )}
+          </div>
+          
+          <div className="hidden sm:flex items-center gap-6 pointer-events-auto">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+              <span>Network_Stable</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Top bar profile - Positioned below main header if needed or merged */}
         {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && profile && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute top-0 left-0 right-0 z-[100] p-4 flex items-center justify-between pointer-events-none overflow-hidden"
+            className="absolute top-16 sm:top-20 left-0 right-0 z-[100] p-4 flex items-center justify-between pointer-events-none overflow-hidden"
           >
             {/* Scan Line Overlay */}
             <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
@@ -181,13 +215,6 @@ export default function App() {
             <div className="hidden lg:flex flex-col gap-6 w-64 xl:w-72">
               <div className="bg-zinc-900 border border-white/5 p-5 xl:p-6 rounded-xl space-y-4">
                 <button 
-                  onClick={() => setShowLeaderboard(true)}
-                  className="w-full bg-black/40 hover:bg-yellow-400/10 hover:border-yellow-400/30 border border-white/5 p-4 rounded-lg flex items-center gap-4 transition-all group"
-                >
-                  <Trophy size={18} className="text-yellow-400 opacity-40 group-hover:opacity-100" />
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">High Records</span>
-                </button>
-                <button 
                   onClick={() => setShowProfile(true)}
                   className="w-full bg-black/40 hover:bg-yellow-400/10 hover:border-yellow-400/30 border border-white/5 p-4 rounded-lg flex items-center gap-4 transition-all group"
                 >
@@ -204,6 +231,7 @@ export default function App() {
               <GameContainer 
                 gameState={gameState}
                 onScoreUpdate={setScore}
+                onCCollectedUpdate={setCCollected}
                 onHealthUpdate={setHealth}
                 onMultiplierUpdate={setMultiplier}
                 onGameOver={handleGameOver}
@@ -250,6 +278,10 @@ export default function App() {
                        <div className="text-[8px] text-zinc-600 mb-1 tracking-widest uppercase">Current_Yield</div>
                        <div className="text-2xl xl:text-3xl font-black italic tracking-tighter tabular-nums">{score.toLocaleString()}</div>
                     </div>
+                    <div>
+                       <div className="text-[8px] text-yellow-500 mb-1 tracking-widest uppercase">$C_COLLECTED</div>
+                       <div className="text-2xl xl:text-3xl font-black italic tracking-tighter tabular-nums text-yellow-400">{cCollected}</div>
+                    </div>
                  </div>
               </div>
             </div>
@@ -258,6 +290,10 @@ export default function App() {
 
         {/* Overlay UI */}
         <AnimatePresence mode="wait">
+          {gameState === 'ACCOUNT_SETUP' && (
+            <AccountSetup onComplete={handleAccountComplete} />
+          )}
+
           {gameState === 'INTRO' && (
             <IntroLoader key="intro" onComplete={() => setGameState(profile ? 'HOME' : 'PROFILE_SETUP')} />
           )}
@@ -288,10 +324,12 @@ export default function App() {
             >
               <GameOverOverlay 
                 score={gameOverData.score} 
+                cCollected={gameOverData.cCollected}
                 distance={gameOverData.distance}
                 multiplier={gameOverData.multiplier}
                 onRestart={startGame} 
                 onHome={() => setGameState('HOME')} 
+                userStats={userStats}
               />
             </motion.div>
           )}
@@ -305,13 +343,19 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {showLeaderboard && (
-            <LeaderboardOverlay onClose={() => setShowLeaderboard(false)} />
-          )}
           {showProfile && (
-            <ProfileDossier onClose={() => setShowProfile(false)} onReset={resetIdentity} />
+            <ProfileDossier onClose={() => setShowProfile(false)} onReset={resetIdentity} userStats={userStats} />
           )}
         </AnimatePresence>
+
+        {/* FIXED SOCIAL FOOTER - Persistent on Home/Game Over etc. */}
+        {gameState !== 'PLAYING' && (
+          <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 pointer-events-none flex justify-center">
+            <div className="pointer-events-auto">
+              <SocialLinks />
+            </div>
+          </div>
+        )}
       </div>
     </ErrorBoundary>
   );
