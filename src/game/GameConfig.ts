@@ -2,10 +2,10 @@ import Phaser from 'phaser';
 
 export const GameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
-  width: Math.floor(window.innerWidth * 0.65),
-  height: Math.floor(window.innerHeight * 0.75),
+  width: 720,
+  height: 1280,
   parent: 'game-container',
-  transparent: true,
+  transparent: false,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
@@ -16,6 +16,9 @@ export const GameConfig: Phaser.Types.Core.GameConfig = {
       gravity: { x: 0, y: 0 },
       debug: false,
     },
+  },
+  audio: {
+    noAudio: true
   },
   scene: [],
 };

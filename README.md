@@ -1,57 +1,44 @@
-# Concrete Rush: Bag Hunt
+# Concrete Rush: Bag Hunt 🏍️
 
-A high-octane cyberpunk bag hunting arcade game built with React, Phaser 3, and Tailwind CSS. Collect yield, dodge threats, and climb the leaderboard as an elite network operative.
+**Concrete Rush** is a cinematic, high-speed futuristic highway runner. Set in a solar-drenched "Solar-Cyber" environment, you assume the role of a precision network operative navigating the high-stakes highway of the Concrete ecosystem.
 
-## 🚀 Live Demo
-[Concrete Rush: Bag Hunt](https://concrete-rush.online)
+> [!TIP]
+> For a deep dive into the technical architecture, design philosophy, and future roadmap, see [DOCS.md](./DOCS.md).
+
+## 🌅 The Experience
+Concrete Rush moves away from traditional dark cyberpunk tropes, offering a **cinematic daytime atmospheric experience**. 
+- **Breathtaking Visuals**: Sapphire sky gradients, warm solar flares, and parallax-scrolling nature.
+- **Neural Identity**: Establish your profile, track your yield, and earn your place among the "Network Legends."
+- **High-Fidelity Audio**: Immersive engine sounds and a responsive synth-wave soundtrack.
 
 ## 🛠 Tech Stack
-- **Frontend**: React 19, TypeScript
-- **Game Engine**: Phaser 3 (Arcade Physics)
+- **Engine**: Phaser 3 (Arcade Physics & Rendering)
+- **UI Framework**: React 18 & TypeScript
 - **Styling**: Tailwind CSS
-- **Animations**: Motion (framer-motion)
-- **Icons**: Lucide React
-- **Build Tool**: Vite
+- **Animations**: Motion (React) & Phaser Tweens
+- **Persistence**: LocalStorage Profile API
 
-## 🎮 How to Play
-- **A / D**: Steer Left and Right
-- **P**: Pause/Resume Task
-- **Objective**: Collect Yield Bags (+10) while avoiding obstacles.
-- **Boosts**: Collect Blue bags for speed spikes.
-- **Multipliers**: Collect Purple bags to double your score yield for a limited time.
-- **Goal**: Reach the "NETWORK LEGEND" grade by capturing max yield.
+## 🎮 Operative Manual
+- **Steer**: `A / D` or `Left / Right` arrow keys. (Touch swipe supported on mobile)
+- **Pause**: `P` key.
+- **Collect Yield**: Capture golden data-nodes (+10 points).
+- **Multipliers**: Grab blue data-pads for 2x Score Multiplier.
+- **Avoid Hazards**: Dodge red "Maintenance Bags" to preserve hull integrity.
+- **Neural Death**: Losing all 3 health points terminates the current link session.
 
-## 🛠 Local Development
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/your-username/concrete-rush.git
-cd concrete-rush
-```
-
-### 2. Install dependencies
+## 🚀 Deployment & Development
+### Local Setup
 ```bash
 npm install
-```
-
-### 3. Run development server
-```bash
 npm run dev
 ```
 
-### 4. Build for production
+### Build
 ```bash
 npm run build
 ```
 
-## 🌐 Deploying to Vercel
+The production output is served from the `dist` directory. Compatible with Vercel, Netlify, and Cloud Run deployments.
 
-1. Push your code to a GitHub repository.
-2. Import the repository in [vercel.com](https://vercel.com).
-3. **Framework Preset**: Vite
-4. **Build Command**: `npm run build`
-5. **Output Directory**: `dist`
-6. Add environment variables if needed (use `VITE_` prefix).
-
-## 📄 License
-This project is licensed under the MIT License.
+## 📄 Documentation
+Detailed technical specifications, including performance optimization strategies and component architecture, can be found in the **[Complete Documentation Guide](./DOCS.md)**.

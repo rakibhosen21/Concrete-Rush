@@ -23,16 +23,14 @@ export const PLAYER_CONFIG = {
   HEALTH: 3,
 };
 
-export enum BAG_TYPE {
-  YELLOW = 'YELLOW',
-  BLUE = 'BLUE',
-  PURPLE = 'PURPLE',
-  RED = 'RED',
+export enum ITEM_TYPE {
+  COIN = 'COIN',
+  BOOST = 'BOOST',
+  OBSTACLE = 'OBSTACLE',
 }
 
-export const BAG_CONFIG = {
-  [BAG_TYPE.YELLOW]: { color: COLORS.PRIMARY, score: 10, label: 'Yield' },
-  [BAG_TYPE.BLUE]: { color: COLORS.SECONDARY, score: 5, label: 'Boost' },
-  [BAG_TYPE.PURPLE]: { color: COLORS.MULTIPLIER, score: 0, label: 'Multi' },
-  [BAG_TYPE.RED]: { color: COLORS.DANGER, score: -10, label: 'Trap' },
+export const ITEM_CONFIG = {
+  [ITEM_TYPE.COIN]: { color: COLORS.PRIMARY, score: 10, label: '$C' },
+  [ITEM_TYPE.BOOST]: { color: '#22c55e', score: 0, label: 'BOOST' },
+  [ITEM_TYPE.OBSTACLE]: { color: COLORS.DANGER, score: 0, label: 'VOID' },
 };
