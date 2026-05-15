@@ -34,3 +34,15 @@ export const ITEM_CONFIG = {
   [ITEM_TYPE.BOOST]: { color: '#22c55e', score: 0, label: 'BOOST' },
   [ITEM_TYPE.OBSTACLE]: { color: COLORS.DANGER, score: 0, label: 'VOID' },
 };
+
+export enum BAG_TYPE {
+  RED = 'RED',
+  PURPLE = 'PURPLE',
+  BLUE = 'BLUE',
+}
+
+export const BAG_CONFIG = {
+  [BAG_TYPE.RED]: { color: '#ef4444', score: -50, label: 'VOID' },
+  [BAG_TYPE.PURPLE]: { color: '#bc00ff', score: 0, label: 'MULTIPLIER' },
+  [BAG_TYPE.BLUE]: { color: '#00f0ff', score: 0, label: 'BOOST' },
+};
