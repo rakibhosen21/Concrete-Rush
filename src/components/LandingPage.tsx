@@ -15,12 +15,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
   const [isMuted, setIsMuted] = useState(true);
 
   return (
-    <div className="min-h-screen bg-transparent text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
+    <div className="min-h-screen bg-black text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
       {/* Immersive Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60 pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900/10 to-black pointer-events-none z-0" />
+      
+      {/* Animated Particles Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ 
+              x: Math.random() * 100 + "%", 
+              y: Math.random() * 100 + "%",
+              opacity: Math.random() * 0.3
+            }}
+            animate={{ 
+              y: ["110%", "-10%"],
+              opacity: [0, 0.3, 0]
+            }}
+            transition={{ 
+              duration: 10 + Math.random() * 15, 
+              repeat: Infinity,
+              ease: "linear",
+              delay: Math.random() * 10
+            }}
+            className="absolute w-[2px] h-[2px] bg-cyan-400 rounded-full shadow-[0_0_8px_white]"
+          />
+        ))}
+      </div>
       
       {/* Radial Glow - Subtle Ambient Fade */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-400/5 blur-[120px] rounded-full pointer-events-none z-0 animate-ambient-glow" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 blur-[150px] rounded-full pointer-events-none z-0" />
  
       <nav className="relative z-10 px-4 sm:px-8 py-4 sm:py-6 flex justify-end items-center max-w-7xl mx-auto w-full pointer-events-auto">
         <motion.div 

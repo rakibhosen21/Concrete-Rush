@@ -72,7 +72,7 @@ export default class MainScene extends Phaser.Scene {
 
     // Spawn events
     this.time.addEvent({ delay: 1200, callback: this.spawnObstacle, callbackScope: this, loop: true });
-    this.time.addEvent({ delay: 500, callback: this.spawnItem, callbackScope: this, loop: true });
+    this.time.addEvent({ delay: 800, callback: this.spawnItem, callbackScope: this, loop: true });
     this.time.addEvent({ delay: 10000, callback: () => { this.speed = Math.min(this.speed + 80, 2000); }, loop: true });
 
     // Inputs
@@ -421,57 +421,77 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private spawnItem() {
-    const lane = Phaser.Math.Between(0, 2);
-    const rand = Math.random();
-    const centerX = this.getLaneX(lane);
-    
-    if (rand > 0.94) {
-        const boost = this.items.create(centerX, -100, 'boost-tex');
-        boost.setData('type', 'BOOST');
-        boost.setVelocityY(this.speed);
-        
-        this.tweens.add({
-            targets: boost,
-            scale: 1.2,
-            alpha: 0.8,
-            duration: 400,
-            yoyo: true,
-            repeat: -1
-        });
-    } else {
-        // Create a custom container for the coin to include text
-        const coinContainer = this.add.container(centerX, -100);
-        const coinBase = this.add.image(0, 0, 'coin-base');
-        const coinText = this.add.text(0, 0, '$C', {
-            fontFamily: 'Arial Black, Inter, sans-serif',
-            fontSize: '18px',
-            color: '#000000',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        
-        coinContainer.add([coinBase, coinText]);
-        this.physics.world.enable(coinContainer);
-        (coinContainer.body as Phaser.Physics.Arcade.Body).setVelocityY(this.speed);
-        coinContainer.setData('type', 'COIN');
-        this.items.add(coinContainer as any);
+    // Max screen limit: 6 coins
+    const activeCoins = this.items.getChildren().filter(item => item.getData('type') === 'COIN').length;
+    if (activeCoins >= 6) return;
 
-        // Coin Animation: Pulse and Slight Rotation
-        this.tweens.add({
-            targets: coinContainer,
-            scale: 1.15,
-            duration: 600,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-        
-        this.tweens.add({
-            targets: coinBase,
-            angle: 360,
-            duration: 4000,
-            repeat: -1
-        });
+    const lane = Phaser.Math.Between(0, 2);
+    const centerX = this.getLaneX(lane);
+    const rand = Math.random();
+
+    // Speed Boost Powerup (Keep intact but rare)
+    if (rand > 0.95) {
+      const boost = this.items.create(centerX, -100, 'boost-tex');
+      boost.setData('type', 'BOOST');
+      boost.setVelocityY(this.speed);
+      boost.setDepth(100);
+      
+      this.tweens.add({
+          targets: boost,
+          scale: 1.2,
+          alpha: 0.8,
+          duration: 400,
+          yoyo: true,
+          repeat: -1
+      });
+      return;
     }
+
+    // $C Coin System - 60px diameter
+    const coinGraphics = this.add.graphics();
+    coinGraphics.fillStyle(0xFFD700, 1);
+    coinGraphics.fillCircle(0, 0, 30); // 60px diameter
+    coinGraphics.lineStyle(3, 0xFFFFFF, 1);
+    coinGraphics.strokeCircle(0, 0, 30);
+
+    const coinText = this.add.text(0, 0, '$C', {
+      fontSize: '18px',
+      fontFamily: 'monospace',
+      color: '#000000',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0.5);
+
+    const coinContainer = this.add.container(centerX, -50, [coinGraphics, coinText]);
+    coinContainer.setDepth(100);
+    coinContainer.setData('type', 'COIN');
+    
+    // Enable Physics
+    this.physics.world.enable(coinContainer);
+    const body = coinContainer.body as Phaser.Physics.Arcade.Body;
+    body.setCircle(30, -30, -30); // Center the hit area
+
+    // Movement using tween - slower as requested (4000ms)
+    this.tweens.add({
+      targets: coinContainer,
+      y: this.scale.height + 100,
+      duration: 4000,
+      ease: 'Linear',
+      onComplete: () => {
+        coinContainer.destroy();
+      }
+    });
+
+    // Spinning/Pulsing Animation
+    this.tweens.add({
+      targets: coinContainer,
+      scale: 1.15,
+      duration: 600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+
+    this.items.add(coinContainer as any);
   }
 
   private handleObstacleCollision(car: any, obstacle: any) {
@@ -525,7 +545,7 @@ export default class MainScene extends Phaser.Scene {
     this.game.events.emit('update-multiplier', 2);
     
     // Visual effect on car
-    const glow = this.vehicle.getAt(1) as Phaser.GameObjects.PointLight;
+    const glow = this.vehicle.getAt(1) as any;
     glow.color = 0x22c55e;
     glow.intensity = 0.8;
 

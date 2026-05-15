@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import bcrypt from 'bcryptjs';
 import { createServer as createViteServer } from 'vite';
 
 const app = express();
@@ -19,10 +20,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.post('/api/register', (req, res) => {
-  const { username } = req.body;
-  if (!username || typeof username !== 'string') {
-    return res.status(400).json({ error: 'Invalid agent ID' });
+app.post('/api/register', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || typeof username !== 'string' || !password || password.length < 6) {
+    return res.status(400).json({ error: 'Invalid credentials. Password must be 6+ chars.' });
   }
 
   const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
@@ -32,8 +33,11 @@ app.post('/api/register', (req, res) => {
     return res.status(409).json({ error: 'AGENT ID ALREADY CLAIMED — choose another' });
   }
 
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   users[normalized] = {
     username,
+    password: hashedPassword,
     createdAt: new Date().toISOString(),
     bestScore: 0,
     totalCoins: 0,
@@ -42,7 +46,36 @@ app.post('/api/register', (req, res) => {
   };
 
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-  res.json({ success: true, user: users[normalized] });
+  
+  // Don't return password in response
+  const { password: _, ...userStats } = users[normalized];
+  res.json({ success: true, user: userStats });
+});
+
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Credentials required' });
+  }
+
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  const normalized = username.toLowerCase();
+  const user = users[normalized];
+
+  if (!user) {
+    return res.status(404).json({ error: 'AGENT NOT FOUND' });
+  }
+
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    return res.status(401).json({ error: 'INVALID CREDENTIALS' });
+  }
+
+  // Generate a simple session token
+  const token = Buffer.from(`${normalized}:${Date.now()}`).toString('base64');
+  
+  const { password: _, ...userStats } = user;
+  res.json({ success: true, user: userStats, token });
 });
 
 app.get('/api/user/:username', (req, res) => {
@@ -51,7 +84,8 @@ app.get('/api/user/:username', (req, res) => {
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-  res.json(user);
+  const { password: _, ...userStats } = user;
+  res.json(userStats);
 });
 
 app.post('/api/update', (req, res) => {

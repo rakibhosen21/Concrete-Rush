@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { TrendingUp, User, BarChart3 } from 'lucide-react';
+import { TrendingUp, User, BarChart3, LogOut } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { GameOverOverlay } from './components/GameOverOverlay';
 import { PauseOverlay } from './components/PauseOverlay';
@@ -75,6 +75,12 @@ export default function App() {
     setGameState('HOME');
   };
 
+  const handleLogout = () => {
+    if (window.confirm('TERMINATE SESSION?')) {
+      resetIdentity();
+    }
+  };
+
   const resetIdentity = () => {
     localStorage.clear();
     setProfile(null);
@@ -147,7 +153,16 @@ export default function App() {
             {userStats && (
               <div className="hidden sm:flex flex-col pointer-events-auto">
                 <div className="text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Agent_Connected</div>
-                <div className="text-xs font-black italic text-cyan-400 uppercase tracking-widest">{userStats.username}</div>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs font-black italic text-cyan-400 uppercase tracking-widest">{userStats.username}</div>
+                  <button 
+                    onClick={handleLogout}
+                    className="p-1 hover:text-red-500 transition-colors pointer-events-auto"
+                    title="Terminate Session"
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </div>
               </div>
             )}
           </div>
