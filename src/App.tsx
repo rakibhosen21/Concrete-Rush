@@ -4,7 +4,6 @@ import { TrendingUp, BarChart3, ShoppingBag } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { GameOverOverlay } from './components/GameOverOverlay';
 import { PauseOverlay } from './components/PauseOverlay';
-import { IntroLoader } from './components/IntroLoader';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Garage } from './components/Garage';
@@ -13,7 +12,7 @@ import { AudioService } from './game/AudioService';
 
 const GameContainer = lazy(() => import('./components/GameContainer').then(m => ({ default: m.GameContainer })));
 
-export type GameState = 'INTRO' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+export type GameState = 'HOME' | 'PLAYING' | 'GAME_OVER';
 
 const INITIAL_STATS = {
   totalCoins: 0,
@@ -25,7 +24,7 @@ const INITIAL_STATS = {
 };
 
 export default function App() {
-  const [gameState, setGameState] = useState<GameState>('INTRO');
+  const [gameState, setGameState] = useState<GameState>('HOME');
   const [score, setScore] = useState(0);
   const [cCollected, setCCollected] = useState(0);
   const [health, setHealth] = useState(3);
@@ -219,10 +218,6 @@ export default function App() {
 
         {/* Overlay UI */}
         <AnimatePresence mode="wait">
-          {gameState === 'INTRO' && (
-            <IntroLoader key="intro" onComplete={() => setGameState('HOME')} />
-          )}
-
           {gameState === 'HOME' && (
             <motion.div
               key="home"
