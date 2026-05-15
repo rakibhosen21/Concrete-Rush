@@ -51,6 +51,8 @@ app.post('/api/register', async (req, res) => {
   
   // Don't return password in response
   const { password: _, ...userStats } = users[normalized];
+  if (!userStats.unlockedSkins) userStats.unlockedSkins = ['NEURAL RUNNER'];
+  if (!userStats.equippedSkin) userStats.equippedSkin = 'NEURAL RUNNER';
   res.json({ success: true, user: userStats });
 });
 
@@ -77,6 +79,8 @@ app.post('/api/login', async (req, res) => {
   const token = Buffer.from(`${normalized}:${Date.now()}`).toString('base64');
   
   const { password: _, ...userStats } = user;
+  if (!userStats.unlockedSkins) userStats.unlockedSkins = ['NEURAL RUNNER'];
+  if (!userStats.equippedSkin) userStats.equippedSkin = 'NEURAL RUNNER';
   res.json({ success: true, user: userStats, token });
 });
 
@@ -87,6 +91,8 @@ app.get('/api/user/:username', (req, res) => {
     return res.status(404).json({ error: 'User not found' });
   }
   const { password: _, ...userStats } = user;
+  if (!userStats.unlockedSkins) userStats.unlockedSkins = ['NEURAL RUNNER'];
+  if (!userStats.equippedSkin) userStats.equippedSkin = 'NEURAL RUNNER';
   res.json(userStats);
 });
 
@@ -105,6 +111,9 @@ app.post('/api/update', (req, res) => {
   user.totalCoins += coinsCollected;
   user.gamesPlayed += 1;
 
+  if (!user.unlockedSkins) user.unlockedSkins = ['NEURAL RUNNER'];
+  if (!user.equippedSkin) user.equippedSkin = 'NEURAL RUNNER';
+
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
   res.json({ success: true, user });
 });
@@ -117,12 +126,15 @@ app.post('/api/garage/action', (req, res) => {
   if (!user) return res.status(404).json({ error: 'User not found' });
 
   if (action === 'UNLOCK') {
-    if (user.totalCoins < cost) return res.status(400).json({ error: 'Insufficient $C' });
+    if ((user.totalCoins || 0) < cost) return res.status(400).json({ error: 'Insufficient $C' });
+    
+    if (!user.unlockedSkins) user.unlockedSkins = ['NEURAL RUNNER'];
     if (user.unlockedSkins.includes(skinId)) return res.status(400).json({ error: 'Already unlocked' });
     
-    user.totalCoins -= cost;
+    user.totalCoins = (user.totalCoins || 0) - cost;
     user.unlockedSkins.push(skinId);
   } else if (action === 'EQUIP') {
+    if (!user.unlockedSkins) user.unlockedSkins = ['NEURAL RUNNER'];
     if (!user.unlockedSkins.includes(skinId)) return res.status(400).json({ error: 'Skin not unlocked' });
     user.equippedSkin = skinId;
   }

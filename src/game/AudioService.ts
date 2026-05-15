@@ -5,13 +5,29 @@ export class AudioService {
   private static engineOsc: OscillatorNode | null = null;
   private static engineGain: GainNode | null = null;
   
-  private static musicBassGain: GainNode | null = null;
-  private static musicMelodyGain: GainNode | null = null;
-  private static musicInterval: any = null;
+  private static reverb: ConvolverNode | null = null;
+  private static musicIntervals: any[] = [];
+
+  private static createReverb(duration: number, decay: number) {
+    const sampleRate = this.ctx!.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = this.ctx!.createBuffer(2, length, sampleRate);
+    for (let i = 0; i < 2; i++) {
+      const channel = impulse.getChannelData(i);
+      for (let j = 0; j < length; j++) {
+        channel[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / length, decay);
+      }
+    }
+    return impulse;
+  }
 
   private static init() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      this.reverb = this.ctx.createConvolver();
+      this.reverb.buffer = this.createReverb(2, 2);
+      this.reverb.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
@@ -32,65 +48,87 @@ export class AudioService {
   static startBGM() {
     if (this.isMuted) return;
     this.init();
-    if (this.musicInterval) return;
+    if (this.musicIntervals.length > 0) return;
 
-    // Bass Gain
-    this.musicBassGain = this.ctx!.createGain();
-    this.musicBassGain.gain.setValueAtTime(0, this.ctx!.currentTime);
-    this.musicBassGain.gain.linearRampToValueAtTime(0.08, this.ctx!.currentTime + 2);
-    this.musicBassGain.connect(this.ctx!.destination);
+    const ctx = this.ctx!;
+    const dest = this.reverb!;
+    
+    // 90 BPM Settings
+    const beatTime = 60 / 90; // 0.666s
+    const eighthTime = beatTime / 2;
 
-    // Melody Gain
-    this.musicMelodyGain = this.ctx!.createGain();
-    this.musicMelodyGain.gain.setValueAtTime(0, this.ctx!.currentTime);
-    this.musicMelodyGain.gain.linearRampToValueAtTime(0.05, this.ctx!.currentTime + 4);
-    this.musicMelodyGain.connect(this.ctx!.destination);
+    // 1. Smooth Chord Pads (Cm, Eb, Fm, Bb)
+    const chords = [
+      [130.81, 155.56, 196.00], // C3, Eb3, G3 (Cm)
+      [155.56, 196.00, 233.08], // Eb3, G3, Bb3 (Eb)
+      [174.61, 207.65, 261.63], // F3, Ab3, C4 (Fm)
+      [116.54, 146.83, 174.61]  // Bb2, D3, F3 (Bb)
+    ];
+    let chordIdx = 0;
 
-    const playPulse = () => {
-      const time = this.ctx!.currentTime;
-      
-      // Bass Sawtooth
-      const bass = this.ctx!.createOscillator();
-      bass.type = 'sawtooth';
-      bass.frequency.setValueAtTime(55, time); // A1
-      const bg = this.ctx!.createGain();
-      bg.gain.setValueAtTime(0.5, time);
-      bg.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
-      bass.connect(bg);
-      bg.connect(this.musicBassGain!);
-      bass.start(time);
-      bass.stop(time + 0.6);
-
-      // Random Melody Sine
-      const notes = [440, 493.88, 523.25, 587.33, 659.25]; // A4 Pentatonic
-      const note = notes[Math.floor(Math.random() * notes.length)];
-      const mel = this.ctx!.createOscillator();
-      mel.type = 'sine';
-      mel.frequency.setValueAtTime(note, time + 0.1);
-      const mg = this.ctx!.createGain();
-      mg.gain.setValueAtTime(0, time);
-      mg.gain.linearRampToValueAtTime(0.3, time + 0.2);
-      mg.gain.exponentialRampToValueAtTime(0.01, time + 0.8);
-      mel.connect(mg);
-      mg.connect(this.musicMelodyGain!);
-      mel.start(time + 0.1);
-      mel.stop(time + 1.0);
+    const playChord = () => {
+      const t = ctx.currentTime;
+      const currentChord = chords[chordIdx];
+      currentChord.forEach(freq => {
+        const osc = ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.04, t + 1); // Soft attack
+        g.gain.linearRampToValueAtTime(0, t + 4);    // Long decay
+        osc.connect(g);
+        g.connect(dest);
+        osc.start(t);
+        osc.stop(t + 4.1);
+      });
+      chordIdx = (chordIdx + 1) % chords.length;
     };
 
-    this.musicInterval = setInterval(playPulse, 600); // ~100 BPM
+    // 2. Gentle Arpeggio (Sine)
+    const arps = [523.25, 587.33, 622.25, 698.46, 783.99]; // C5, D5, Eb5, F5, G5
+    let arpIdx = 0;
+    const playArp = () => {
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(arps[arpIdx], t);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+      osc.connect(g);
+      g.connect(dest);
+      osc.start(t);
+      osc.stop(t + 0.85);
+      arpIdx = (arpIdx + 1) % arps.length;
+    };
+
+    // 3. Subtle Kick (Every 2s)
+    const playKick = () => {
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(60, t);
+      osc.frequency.exponentialRampToValueAtTime(30, t + 0.2);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.35);
+    };
+
+    playChord();
+    this.musicIntervals.push(setInterval(playChord, beatTime * 4 * 1000)); // Every 4 beats
+    this.musicIntervals.push(setInterval(playArp, eighthTime * 1000));    // Every half beat
+    this.musicIntervals.push(setInterval(playKick, 2000));                // Every 2s
   }
 
   static stopBGM() {
-    if (this.musicInterval) {
-      clearInterval(this.musicInterval);
-      this.musicInterval = null;
-    }
-    if (this.musicBassGain) {
-      this.musicBassGain.gain.linearRampToValueAtTime(0, this.ctx!.currentTime + 0.5);
-    }
-    if (this.musicMelodyGain) {
-      this.musicMelodyGain.gain.linearRampToValueAtTime(0, this.ctx!.currentTime + 0.5);
-    }
+    this.musicIntervals.forEach(interval => clearInterval(interval));
+    this.musicIntervals = [];
   }
 
   static playCollect() {

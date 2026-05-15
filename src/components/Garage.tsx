@@ -69,9 +69,13 @@ export const Garage: React.FC<GarageProps> = ({ onClose, userStats, onUpdateUser
   return (
     <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex flex-col pointer-events-auto">
       {/* Header */}
-      <div className="p-6 flex items-center justify-between border-b border-white/5">
-        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-          <ChevronLeft size={24} />
+      <div className="p-6 flex items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-md">
+        <button 
+          onClick={onClose} 
+          className="flex items-center gap-1.5 text-cyan-400 hover:text-white transition-colors group active:scale-95"
+        >
+          <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span className="text-[10px] font-black uppercase tracking-widest">Back_to_Base</span>
         </button>
         <div className="flex flex-col items-center">
           <h2 className="text-xl font-black italic tracking-tighter uppercase">Operations_Garage</h2>
