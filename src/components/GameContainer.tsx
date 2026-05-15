@@ -11,6 +11,8 @@ interface GameContainerProps {
   onHealthUpdate: (health: number) => void;
   onMultiplierUpdate: (multiplier: number) => void;
   onGameOver: (finalScore: number) => void;
+  onCCollectedUpdate?: (collected: number) => void;
+  onPauseUpdate?: (paused: boolean) => void;
   gameState: 'INTRO' | 'HOME' | 'PLAYING' | 'GAME_OVER';
 }
 
@@ -19,6 +21,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   onHealthUpdate,
   onMultiplierUpdate,
   onGameOver,
+  onCCollectedUpdate,
+  onPauseUpdate,
   gameState,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);

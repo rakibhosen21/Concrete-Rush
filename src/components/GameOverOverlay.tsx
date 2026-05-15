@@ -10,11 +10,17 @@ interface GameOverOverlayProps {
 }
 
 export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, onRestart, onHome }) => {
-  const highScore = parseInt(localStorage.getItem('concrete_high_score') || '0');
-  const isNewHigh = score > highScore;
+  const storedStats = localStorage.getItem('concrete_user_stats');
+  const userStats = storedStats ? JSON.parse(storedStats) : null;
+  const bestScore = (userStats?.bestScore != null && userStats.bestScore > 0)
+    ? userStats.bestScore
+    : score;
+  const isNewHigh = score > bestScore;
   const [copied, setCopied] = useState(false);
   
   if (isNewHigh) {
+    const updatedStats = { ...userStats, bestScore: score };
+    localStorage.setItem('concrete_user_stats', JSON.stringify(updatedStats));
     localStorage.setItem('concrete_high_score', score.toString());
   }
 

@@ -3,7 +3,7 @@ import { COLORS, PLAYER_CONFIG, BAG_TYPE, BAG_CONFIG } from '../constants';
 import { AudioService } from './AudioService';
 
 export default class MainScene extends Phaser.Scene {
-  private car!: Phaser.GameObjects.Container;
+  private vehicle!: Phaser.GameObjects.Container;
   private roadGroup!: Phaser.GameObjects.Group;
   private obstacles!: Phaser.Physics.Arcade.Group;
   private bags!: Phaser.Physics.Arcade.Group;
@@ -13,7 +13,9 @@ export default class MainScene extends Phaser.Scene {
   private health = PLAYER_CONFIG.HEALTH;
   private currentLane = 1; // 0, 1, 2
   private isPaused = false;
+  private isJumping = false;
   private multiplierActive = false;
+  private currentMultiplier = 1;
   private multiplierTimer?: Phaser.Time.TimerEvent;
   private emitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private speedLines!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -21,13 +23,18 @@ export default class MainScene extends Phaser.Scene {
   private sideRails!: Phaser.GameObjects.Group;
   private roadGrid!: Phaser.GameObjects.Grid;
   private speedMeter!: Phaser.GameObjects.Graphics;
+  private scoreText!: Phaser.GameObjects.Text;
+  private bestScoreText!: Phaser.GameObjects.Text;
+  private comboText!: Phaser.GameObjects.Text;
+  private speedLabel!: Phaser.GameObjects.Text;
+  private healthIcons: Phaser.GameObjects.Rectangle[] = [];
   private roads: Phaser.GameObjects.Rectangle[] = [];
-  private combo = 0;
+  private comboCount = 0;
   private maxCombo = 0;
-  private bagsInRow = 0;
   
   private swipeStartX: number = 0;
   private swipeStartTime: number = 0;
+  private swipeTracking = false;
   private minSwipeDistance = 30;
 
   constructor() {
@@ -39,6 +46,17 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
+    this.speed = 600;
+    this.score = 0;
+    this.health = PLAYER_CONFIG.HEALTH;
+    this.currentLane = 1;
+    this.isPaused = false;
+    this.isJumping = false;
+    this.multiplierActive = false;
+    this.currentMultiplier = 1;
+    this.comboCount = 0;
+    this.maxCombo = 0;
+
     this.cameras.main.setBackgroundColor(0x1a0b2e); // Deep purple sunset base
     
     this.createAtmosphere();
@@ -46,6 +64,7 @@ export default class MainScene extends Phaser.Scene {
     this.createRoad();
     this.createTextures();
     this.createPlayer();
+    this.createHUD();
     
     this.obstacles = this.physics.add.group();
     this.bags = this.physics.add.group();
@@ -83,15 +102,14 @@ export default class MainScene extends Phaser.Scene {
     this.game.events.on('move-car', (dir: number) => this.moveLane(dir));
 
     // Speed Meter
-    this.speedMeter = this.add.graphics();
-    this.speedMeter.setDepth(100);
+    this.speedMeter = this.add.graphics().setScrollFactor(0).setDepth(200);
 
     // Audio
     AudioService.startEngine();
 
     // Collision
-    this.physics.add.overlap(this.car, this.obstacles, this.handleObstacleCollision, undefined, this);
-    this.physics.add.overlap(this.car, this.bags, this.handleBagCollision, undefined, this);
+    this.physics.add.overlap(this.vehicle, this.obstacles, this.handleObstacleCollision, undefined, this);
+    this.physics.add.overlap(this.vehicle, this.bags, this.handleBagCollision, undefined, this);
 
     // Initial Layout Setup
     this.handleResize({ width: this.scale.width, height: this.scale.height });
@@ -147,21 +165,34 @@ export default class MainScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-D', () => this.moveLane(1));
     this.input.keyboard?.on('keydown-P', () => this.togglePause());
 
-    // Swipe & Touch
+    // Swipe, touch, and jump input
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const jumpZone = this.scale.height * 0.3;
+      if (pointer.y < jumpZone) {
+        this.jump();
+        this.swipeTracking = false;
+        return;
+      }
+
+      this.swipeTracking = true;
       this.swipeStartX = pointer.x;
       this.swipeStartTime = this.time.now;
     });
 
     this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (!this.swipeTracking) {
+        this.swipeStartTime = 0;
+        return;
+      }
+
       const elapsed = this.time.now - this.swipeStartTime;
       const distance = pointer.x - this.swipeStartX;
+      this.swipeTracking = false;
 
       if (elapsed < 500 && Math.abs(distance) > this.minSwipeDistance) {
         if (distance > 0) this.moveLane(1);
         else this.moveLane(-1);
       } else {
-        // Simple tap fallback
         if (pointer.x < this.scale.width / 2) this.moveLane(-1);
         else this.moveLane(1);
       }
@@ -188,10 +219,18 @@ export default class MainScene extends Phaser.Scene {
         this.roadGrid.cellWidth = roadWidth / 3;
     }
 
-    // Reposition Car
-    this.car.y = height * 0.85;
-    this.car.x = this.getLaneX(this.currentLane);
-    
+    // Reposition Vehicle
+    this.vehicle.y = height * 0.85;
+    this.vehicle.x = this.getLaneX(this.currentLane);
+
+    if (this.speedLabel) {
+      this.speedLabel.setPosition(width - 40, 40);
+    }
+
+    this.healthIcons.forEach((icon, index) => {
+      icon.setPosition(20 + index * 24, height - 30);
+    });
+
     // Update Speed Lines Area
     this.speedLines.setPosition(0, 0);
   }
@@ -210,6 +249,24 @@ export default class MainScene extends Phaser.Scene {
     } else {
       this.physics.resume();
     }
+  }
+
+  private jump() {
+    if (this.isPaused || this.isJumping) {
+      return;
+    }
+
+    this.isJumping = true;
+    this.tweens.add({
+      targets: this.vehicle,
+      y: this.vehicle.y - 120,
+      duration: 220,
+      ease: 'Power2.easeOut',
+      yoyo: true,
+      onComplete: () => {
+        this.isJumping = false;
+      }
+    });
   }
 
   private createTextures() {
@@ -322,51 +379,72 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createPlayer() {
-    const carContainer = this.add.container(0, 0);
-    
-    // Draw 3D-style car using graphics
-    const carBody = this.add.graphics();
-    
-    // Bottom Layer (Shadow/Base)
-    carBody.fillStyle(0x000000, 0.4);
-    carBody.fillRoundedRect(-22, -37, 44, 74, 8);
+    const glow = this.add.pointlight(0, 0, 0x00f0ff, 90, 0.5);
+    const carSprite = this.add.image(0, 0, 'player-car');
 
-    // Deep Body
-    carBody.fillStyle(0x111111);
-    carBody.fillRoundedRect(-20, -35, 40, 70, 10);
-    
-    // Cyan Neon Outline
-    carBody.lineStyle(3, 0x00f0ff, 1);
-    carBody.strokeRoundedRect(-20, -35, 40, 70, 10);
-    
-    // Energy Stripes (Yellow)
-    carBody.fillStyle(0xfacc15, 0.4);
-    carBody.fillRect(-10, -15, 20, 30);
-    
-    // Cockpit
-    carBody.fillStyle(0x222222);
-    carBody.fillRoundedRect(-12, -10, 24, 25, 4);
+    this.vehicle = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [glow, carSprite]);
+    this.vehicle.setSize(40, 75);
+    this.physics.world.enable(this.vehicle);
+    (this.vehicle.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
 
-    carContainer.add(carBody);
-    
-    // Add internal engine light - Cyan for matching
-    const engineGlow = this.add.pointlight(0, 30, 0x00f0ff, 80, 0.6);
-    carContainer.add(engineGlow);
-    
-    this.car = this.add.container(this.getLaneX(this.currentLane), this.scale.height * 0.85, [carContainer]);
-    this.car.setSize(40, 75);
-    this.physics.world.enable(this.car);
-    (this.car.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
-    
-    // Hover animation
     this.tweens.add({
-        targets: carContainer,
+        targets: carSprite,
         y: -6,
         duration: 1200,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut'
     });
+  }
+
+  private createHUD() {
+    const { width, height } = this.scale;
+    this.scoreText = this.add.text(20, 20, 'SCORE: 0', {
+      fontFamily: 'Courier, monospace',
+      fontSize: '20px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setScrollFactor(0).setDepth(200);
+
+    const bestScore = this.getRegistryBestScore() || 0;
+    this.bestScoreText = this.add.text(20, 48, `BEST: ${bestScore.toLocaleString()}`, {
+      fontFamily: 'Courier, monospace',
+      fontSize: '16px',
+      color: '#facc15',
+      fontStyle: 'bold'
+    }).setScrollFactor(0).setDepth(200);
+
+    this.comboText = this.add.text(width / 2, height * 0.35, '', {
+      fontFamily: 'Courier, monospace',
+      fontSize: '32px',
+      color: '#facc15',
+      fontStyle: 'bold'
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(200).setAlpha(0);
+
+    const iconY = height - 30;
+    for (let i = 0; i < PLAYER_CONFIG.HEALTH; i++) {
+      const icon = this.add.rectangle(20 + i * 24, iconY, 18, 18, 0xef4444).setScrollFactor(0).setDepth(200);
+      this.healthIcons.push(icon);
+    }
+
+    this.speedMeter = this.add.graphics().setScrollFactor(0).setDepth(200);
+    this.speedLabel = this.add.text(width - 40, 40, 'SPD', {
+      fontFamily: 'Courier, monospace',
+      fontSize: '14px',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(200);
+
+    this.updateHealthDisplay();
+    this.updateScoreDisplay();
+  }
+
+  private getRegistryBestScore(): number {
+    const userStats = this.game.registry.get('userStats') as { bestScore?: number } | null;
+    if (userStats?.bestScore != null && userStats.bestScore > 0) {
+      return userStats.bestScore;
+    }
+    return 0;
   }
 
   private updateSpeedLines() {
@@ -381,17 +459,17 @@ export default class MainScene extends Phaser.Scene {
       this.currentLane = nextLane;
       
       this.tweens.add({
-        targets: this.car,
+        targets: this.vehicle,
         x: this.getLaneX(this.currentLane),
         duration: 200,
         ease: 'Cubic.easeOut',
         onUpdate: () => {
-          const progress = this.tweens.getTweensOf(this.car)[0].progress;
+          const progress = this.tweens.getTweensOf(this.vehicle)[0].progress;
           const tilt = (nextLane - prevLane) * 12 * Math.sin(progress * Math.PI);
-          this.car.setAngle(tilt);
+          this.vehicle.setAngle(tilt);
         },
         onComplete: () => {
-          this.car.setAngle(0);
+          this.vehicle.setAngle(0);
         }
       });
     }
@@ -429,10 +507,15 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private handleObstacleCollision(car: any, obstacle: any) {
+    if (this.isJumping) {
+      return;
+    }
+
     obstacle.destroy();
     this.health--;
-    this.combo = 0;
-    this.bagsInRow = 0;
+    this.updateHealthDisplay();
+    this.comboCount = 0;
+    this.resetComboDisplay();
     if (this.cameras && this.cameras.main) {
       this.cameras.main.shake(300, 0.02);
       this.cameras.main.flash(100, 255, 0, 0);
@@ -447,29 +530,29 @@ export default class MainScene extends Phaser.Scene {
   private handleBagCollision(car: any, bag: any) {
     const type = bag.getData('type') as BAG_TYPE;
     const config = BAG_CONFIG[type];
-    
-    this.combo++;
-    this.bagsInRow++;
-    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
 
-    // Handle 3-bag combo
-    let comboMultiplier = 1;
-    if (this.bagsInRow >= 3) {
-      comboMultiplier = 2;
-      this.showComboFloat();
-      this.bagsInRow = 0; // Reset after bonus
+    this.comboCount++;
+    if (this.comboCount > this.maxCombo) this.maxCombo = this.comboCount;
+
+    if (this.comboCount % 3 === 0) {
+      this.showComboFloat('COMBO x3!');
+    }
+
+    let comboBonus = 0;
+    if (this.comboCount % 5 === 0) {
+      comboBonus = 50;
+      this.showComboFloat('BONUS +50!');
     }
 
     AudioService.playCollect();
 
-    // Emit particles
     this.emitter.setConfig({
       texture: `bag-${type}`
     });
     this.emitter.emitParticleAt(bag.x, bag.y, 20);
 
-    // Score popup text
-    const popup = this.add.text(bag.x, bag.y, (type === BAG_TYPE.RED ? config.score.toString() : `+${config.score}`), {
+    const popupText = type === BAG_TYPE.RED ? config.score.toString() : `+${config.score}`;
+    const popup = this.add.text(bag.x, bag.y, popupText, {
       fontFamily: 'Inter, sans-serif',
       fontSize: '24px',
       fontStyle: 'italic black',
@@ -487,39 +570,55 @@ export default class MainScene extends Phaser.Scene {
     });
 
     if (type === BAG_TYPE.RED) {
-      this.score = Math.max(0, this.score + config.score);
+      this.score = Math.max(0, this.score + config.score + comboBonus);
       if (this.cameras && this.cameras.main) {
         this.cameras.main.shake(150, 0.008);
       }
     } else if (type === BAG_TYPE.PURPLE) {
       this.activateMultiplier();
+      this.score += comboBonus;
       if (this.cameras && this.cameras.main) {
         this.cameras.main.flash(300, 188, 0, 255);
       }
     } else if (type === BAG_TYPE.BLUE) {
       AudioService.playBoost();
       this.speed = Math.min(this.speed + 400, 1800);
+      this.score += comboBonus;
       if (this.cameras && this.cameras.main) {
         this.cameras.main.zoomTo(1.08, 400, 'Cubic.easeOut');
       }
-      this.time.delayedCall(3000, () => { 
+      this.time.delayedCall(3000, () => {
         if (this.cameras && this.cameras.main) {
           this.speed = Math.max(600, this.speed - 400);
           this.cameras.main.zoomTo(1.0, 600, 'Cubic.easeIn');
         }
       });
     } else {
-      let activeMultiplier = this.multiplierActive ? 2 : 1;
-      this.score += Math.floor(config.score * activeMultiplier * comboMultiplier);
+      this.score += Math.floor(config.score * this.currentMultiplier) + comboBonus;
     }
 
     bag.destroy();
+    this.updateScoreDisplay();
     this.game.events.emit('update-score', this.score);
-    this.game.events.emit('update-multiplier', this.multiplierActive ? 2 : 1);
+    this.game.events.emit('update-multiplier', this.currentMultiplier);
   }
 
-  private showComboFloat() {
-    const float = this.add.text(this.car.x, this.car.y - 60, "+COMBO!", {
+  private showComboFloat(message: string) {
+    if (this.comboText) {
+      this.comboText.setText(message).setAlpha(1).setScale(1);
+      this.tweens.add({
+        targets: this.comboText,
+        y: this.comboText.y - 80,
+        alpha: 0,
+        scale: 1.6,
+        duration: 1000,
+        ease: 'Cubic.easeOut',
+        onComplete: () => this.resetComboDisplay()
+      });
+      return;
+    }
+
+    const float = this.add.text(this.vehicle.x, this.vehicle.y - 60, message, {
         fontFamily: 'Inter, sans-serif',
         fontSize: '32px',
         color: '#facc15',
@@ -537,11 +636,43 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
+  private resetComboDisplay() {
+    if (this.comboText) {
+      this.comboText.setAlpha(0);
+      this.comboText.setText('');
+    }
+  }
+
+  private updateScoreDisplay() {
+    if (this.scoreText) {
+      this.scoreText.setText(`SCORE: ${this.score.toLocaleString()}`);
+    }
+    this.updateBestScoreDisplay();
+  }
+
+  private updateBestScoreDisplay() {
+    const registryStats = this.game.registry.get('userStats') as { bestScore?: number } | null;
+    const savedBest = registryStats?.bestScore;
+    const displayBest = (savedBest != null && savedBest > 0) ? Math.max(savedBest, this.score) : this.score;
+    if (this.bestScoreText) {
+      this.bestScoreText.setText(`BEST: ${displayBest.toLocaleString()}`);
+    }
+  }
+
+  private updateHealthDisplay() {
+    this.healthIcons.forEach((icon, index) => {
+      icon.fillColor = index < this.health ? 0xef4444 : 0x333333;
+      icon.setAlpha(index < this.health ? 1 : 0.35);
+    });
+  }
+
   private activateMultiplier() {
     this.multiplierActive = true;
+    this.currentMultiplier = 2;
     if (this.multiplierTimer) this.multiplierTimer.destroy();
     this.multiplierTimer = this.time.delayedCall(5000, () => {
       this.multiplierActive = false;
+      this.currentMultiplier = 1;
     });
   }
 
@@ -563,29 +694,25 @@ export default class MainScene extends Phaser.Scene {
 
   private drawSpeedMeter() {
     const { width, height } = this.scale;
-    const meterWidth = width * 0.4;
-    const meterHeight = 4;
-    const x = (width - meterWidth) / 2;
-    const y = height - 10;
+    const barHeight = Math.min(height * 0.45, 260);
+    const x = width - 34;
+    const y = 70;
 
     this.speedMeter.clear();
-    
-    // Background
-    this.speedMeter.fillStyle(0x000000, 0.4);
-    this.speedMeter.fillRoundedRect(x, y, meterWidth, meterHeight, 2);
+    this.speedMeter.fillStyle(0x000000, 0.35);
+    this.speedMeter.fillRoundedRect(x, y, 20, barHeight, 10);
 
-    // Fill
-    const progress = Math.min(1, (this.speed - 600) / 1900);
-    const fillWidth = meterWidth * progress;
-    
-    let color = 0x22c55e; // Green
-    if (progress > 0.4) color = 0xeab308; // Yellow
-    if (progress > 0.8) color = 0xef4444; // Red
+    const progress = Phaser.Math.Clamp((this.speed - 600) / 1400, 0, 1);
+    const fillHeight = barHeight * progress;
+
+    let color = 0x00f0ff;
+    if (progress > 0.4) color = 0xfacc15;
+    if (progress > 0.8) color = 0xef4444;
 
     this.speedMeter.fillStyle(color, 1);
-    this.speedMeter.fillRoundedRect(x, y, fillWidth, meterHeight, 2);
-    this.speedMeter.lineStyle(1, 0xffffff, 0.2);
-    this.speedMeter.strokeRoundedRect(x, y, meterWidth, meterHeight, 2);
+    this.speedMeter.fillRoundedRect(x, y + barHeight - fillHeight, 20, fillHeight, 10);
+    this.speedMeter.lineStyle(1, 0xffffff, 0.18);
+    this.speedMeter.strokeRoundedRect(x, y, 20, barHeight, 10);
   }
 
   update() {
