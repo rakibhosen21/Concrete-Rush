@@ -145,25 +145,25 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 
         {/* Overlay Controls in Landscape Mobile */}
         {gameState === 'PLAYING' && isLandscape && (
-            <div className="absolute inset-0 pointer-events-none z-40 lg:hidden flex justify-between p-6 items-end">
-                <div className="flex gap-4">
+            <div className="absolute inset-0 pointer-events-none z-40 lg:hidden flex justify-between p-10 items-end">
+                <div className="flex gap-16">
                     <button 
                         onPointerDown={(e) => {
                             (e.target as HTMLElement).setPointerCapture(e.pointerId);
                             moveCar(-1);
                         }}
-                        className="w-20 h-20 bg-black/30 backdrop-blur-sm border-2 border-cyan-400/30 rounded-full flex items-center justify-center pointer-events-auto active:scale-95 active:bg-cyan-400/20"
+                        className="w-24 h-24 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-full flex items-center justify-center pointer-events-auto active:scale-90 active:bg-white/20 transition-all"
                     >
-                        <ChevronLeft size={40} className="text-cyan-400" />
+                        <ChevronLeft size={48} className="text-white/60" />
                     </button>
                     <button 
                         onPointerDown={(e) => {
                             (e.target as HTMLElement).setPointerCapture(e.pointerId);
                             moveCar(1);
                         }}
-                        className="w-20 h-20 bg-black/30 backdrop-blur-sm border-2 border-yellow-400/30 rounded-full flex items-center justify-center pointer-events-auto active:scale-95 active:bg-yellow-400/20"
+                        className="w-24 h-24 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-full flex items-center justify-center pointer-events-auto active:scale-90 active:bg-white/20 transition-all"
                     >
-                        <ChevronRight size={40} className="text-yellow-400" />
+                        <ChevronRight size={48} className="text-white/60" />
                     </button>
                 </div>
                 <button 
@@ -171,9 +171,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
                         (e.target as HTMLElement).setPointerCapture(e.pointerId);
                         jump();
                     }}
-                    className="w-20 h-20 bg-black/30 backdrop-blur-sm border-2 border-white/30 rounded-full flex items-center justify-center pointer-events-auto active:scale-95 active:bg-white/20"
+                    className="w-32 h-24 bg-yellow-400/10 backdrop-blur-sm border-2 border-yellow-400/20 rounded-2xl flex flex-col items-center justify-center pointer-events-auto active:scale-90 active:bg-yellow-400/30 transition-all"
                 >
-                    <div className="w-8 h-2 bg-white/60 rounded-full" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-500 mb-1">Boost</span>
+                    <div className="w-12 h-1.5 bg-yellow-400/40 rounded-full" />
                 </button>
             </div>
         )}

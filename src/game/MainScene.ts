@@ -25,6 +25,7 @@ export default class MainScene extends Phaser.Scene {
 
   private currentLane = 1; // 0, 1, 2
   private isPaused = false;
+  private isGameOver = false;
   private isJumping = false;
   private multiplierActive = false;
   private multiplierTimer?: Phaser.Time.TimerEvent;
@@ -37,8 +38,13 @@ export default class MainScene extends Phaser.Scene {
   private cText!: Phaser.GameObjects.Text;
   private multiplierText!: Phaser.GameObjects.Text;
 
-  private roadGrid!: Phaser.GameObjects.Grid;
-  private cyberGrid!: Phaser.GameObjects.Graphics;
+  private roadGraphics!: Phaser.GameObjects.Graphics;
+  private roadOffset = 0;
+  private horizonY = 0;
+  private roadWidthTop = 40;
+  private roadWidthBottom = 1200;
+  private skylineLayers: Phaser.GameObjects.Graphics[] = [];
+  private speedLines: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
   
   private swipeStartX: number = 0;
   private swipeStartTime: number = 0;
@@ -51,13 +57,24 @@ export default class MainScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor(0x050208); // Dark Cyberpunk Sky
     
-    this.createAtmosphere();
-    this.createBackgroundGrid();
+    this.roadGraphics = this.add.graphics().setDepth(-10);
     this.createSkyline();
     this.createRoad();
     this.createTextures();
     this.createPlayer();
     
+    // Speed lines for motion blur on sides
+    const lines = this.add.particles(0, 0, 'light-trail', {
+        x: { min: 0, max: this.scale.width },
+        y: { min: 0, max: this.scale.height },
+        speedY: { min: 400, max: 800 },
+        scale: { start: 0.1, end: 1 },
+        alpha: { start: 0, end: 0.2 },
+        lifespan: 500,
+        frequency: 50
+    });
+    lines.setDepth(-1);
+
     this.obstacles = this.physics.add.group();
     this.items = this.physics.add.group();
 
@@ -144,93 +161,46 @@ export default class MainScene extends Phaser.Scene {
 
   private createSkyline() {
     const { width, height } = this.scale;
-    // Dark cyberpunk city silhouette
-    const city = this.add.graphics();
-    city.setDepth(-8);
-    city.setScrollFactor(0);
-    city.fillStyle(0x020104, 1);
+    this.horizonY = height * 0.45;
 
-    // Left Side City
-    for (let i = 0; i < 15; i++) {
-        const bWidth = 60 + Math.random() * 100;
-        const bHeight = 150 + Math.random() * 300;
-        const bx = Math.random() * (width * 0.2);
-        city.fillRect(bx, height - bHeight, bWidth, bHeight);
-        
-        // Window lights
-        city.fillStyle(0x00f0ff, 0.2);
-        for(let j=0; j<8; j++) {
-            if(Math.random() > 0.6) city.fillRect(bx + 10, height - bHeight + 30 + j*40, bWidth - 20, 4);
-        }
-        city.fillStyle(0x020104, 1);
-    }
+    // Sky Gradient
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x000010, 0x000010, 0x0a0a2a, 0x0a0a2a, 1);
+    sky.fillRect(0, 0, width, this.horizonY);
+    sky.setDepth(-20);
 
-    // Right Side City
-    for (let i = 0; i < 15; i++) {
-        const bWidth = 60 + Math.random() * 100;
-        const bHeight = 150 + Math.random() * 300;
-        const bx = width - (Math.random() * (width * 0.2)) - bWidth;
-        city.fillRect(bx, height - bHeight, bWidth, bHeight);
+    // Far Buildings (Slow Parallax)
+    const farLayer = this.add.graphics().setDepth(-15).setScrollFactor(0.1);
+    this.drawCity(farLayer, 0x050510, 30, 100);
+    this.skylineLayers.push(farLayer);
+
+    // Near Buildings (Faster Parallax)
+    const nearLayer = this.add.graphics().setDepth(-12).setScrollFactor(0.3);
+    this.drawCity(nearLayer, 0x0a0a1a, 60, 250);
+    this.skylineLayers.push(nearLayer);
+  }
+
+  private drawCity(g: Phaser.GameObjects.Graphics, color: number, minH: number, maxH: number) {
+    const { width } = this.scale;
+    g.fillStyle(color, 1);
+    for (let i = 0; i < 40; i++) {
+        const w = 40 + Math.random() * 80;
+        const h = minH + Math.random() * (maxH - minH);
+        const x = Math.random() * width;
+        g.fillRect(x, this.horizonY - h, w, h);
         
-        // Window lights
-        city.fillStyle(0xfacc15, 0.2);
-        for(let j=0; j<8; j++) {
-            if(Math.random() > 0.6) city.fillRect(bx + 10, height - bHeight + 30 + j*40, bWidth - 20, 4);
+        // Neon highlights
+        if (Math.random() > 0.5) {
+            const neonColors = [0x00f0ff, 0xbd00ff, 0xfacc15];
+            g.fillStyle(neonColors[Math.floor(Math.random() * 3)], 0.3);
+            g.fillRect(x + 10, this.horizonY - h + 20, w - 20, 4);
+            g.fillStyle(color, 1);
         }
-        city.fillStyle(0x020104, 1);
     }
   }
 
-  private createAtmosphere() {
-    const width = 2000;
-    const height = 1200;
-    const rt = this.add.renderTexture(0, 0, width, height).setScrollFactor(0).setDepth(-10);
-    
-    const sky = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    sky.fillGradientStyle(0x050208, 0x050208, 0x0a0a1a, 0x0a0a1a, 1);
-    sky.fillRect(0, 0, width, height);
-    rt.draw(sky);
-
-    // Distant Cyber Glow
-    this.add.pointlight(width * 0.5, 300, 0xBC00FF, 500, 0.1).setScrollFactor(0).setDepth(-9);
-  }
-
-  private createBackgroundGrid() {
-    const { width, height } = this.scale;
-    this.cyberGrid = this.add.graphics();
-    this.cyberGrid.setDepth(-9.5);
-    this.cyberGrid.setScrollFactor(0);
-
-    const gridColor = 0x00f0ff;
-    const gridAlpha = 0.15;
-    
-    // Draw stylized grid
-    this.cyberGrid.lineStyle(1, gridColor, gridAlpha);
-    
-    // Vertical lines with perspective
-    const verticalLines = 20;
-    const spacing = width / verticalLines;
-    for (let i = 0; i <= verticalLines; i++) {
-        const x = i * spacing;
-        this.cyberGrid.lineBetween(x, height, width / 2 + (x - width / 2) * 0.1, height * 0.3);
-    }
-    
-    // Horizontal lines with exponential spacing for perspective
-    const horizontalLines = 15;
-    for (let i = 0; i < horizontalLines; i++) {
-        const y = height * 0.3 + Math.pow(i / horizontalLines, 2) * (height * 0.7);
-        this.cyberGrid.lineBetween(0, y, width, y);
-    }
-
-    // Pulsating animation
-    this.tweens.add({
-        targets: this.cyberGrid,
-        alpha: { from: 0.3, to: 1 },
-        duration: 2000,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-    });
+  private createRoad() {
+    // Road logic is handled in update via roadGraphics
   }
 
   private setupInputs() {
@@ -270,22 +240,8 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private handleResize(gameSize: { width: number, height: number }) {
-    const { width, height } = gameSize;
-    
-    // Update Road Layout
-    const roadWidth = Math.min(width * 0.9, 600);
-    const centerX = width / 2;
-
-    if (this.roadGrid) {
-        this.roadGrid.x = centerX;
-        this.roadGrid.width = roadWidth;
-        this.roadGrid.height = height;
-        this.roadGrid.cellWidth = roadWidth / 3;
-    }
-
-    // Reposition Vehicle
+    const { height } = gameSize;
     this.vehicle.y = height * 0.85;
-    this.vehicle.x = this.getLaneX(this.currentLane);
   }
 
   private getLaneX(lane: number): number {
@@ -310,32 +266,33 @@ export default class MainScene extends Phaser.Scene {
     const skinId = userStats?.equippedSkin || 'NEURAL RUNNER';
     const skin = (SKINS as any)[skinId] || SKINS['NEURAL RUNNER'];
 
-    // Player Cyber Car Texture - Top Down High Detail
+    // Player Cyber Car Texture - REAR VIEW Detailed
     const carGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
     
-    // Base Car Shape
+    // Main Body (Rear View)
     carGraphics.fillStyle(skin.body, 1);
-    carGraphics.fillRoundedRect(0, 0, 50, 100, 12);
+    carGraphics.fillRoundedRect(5, 20, 60, 40, 8); // Rear bumper area
+    carGraphics.fillRoundedRect(10, 0, 50, 30, 10); // Upper cabin area
     
-    // Windshield
-    carGraphics.fillStyle(0x0a0a0a, 0.8);
-    carGraphics.fillRoundedRect(5, 15, 40, 30, 6);
-    carGraphics.fillStyle(skin.glow, 0.2);
-    carGraphics.fillRoundedRect(8, 18, 34, 24, 4);
-
-    // Decorative Lines
-    carGraphics.lineStyle(2, skin.glow, 1);
-    carGraphics.beginPath();
-    carGraphics.moveTo(5, 50);
-    carGraphics.lineTo(45, 50);
-    carGraphics.strokePath();
-
-    // Headlights Glow
-    carGraphics.fillStyle(skin.glow, 0.8);
-    carGraphics.fillCircle(12, 5, 5);
-    carGraphics.fillCircle(38, 5, 5);
+    // Rear Window
+    carGraphics.fillStyle(0x050510, 1);
+    carGraphics.fillRoundedRect(15, 5, 40, 15, 4);
     
-    carGraphics.generateTexture('player-car', 50, 100);
+    // Tail Lights (Glow)
+    carGraphics.fillStyle(0xff0000, 1);
+    carGraphics.fillRoundedRect(10, 25, 12, 6, 2);
+    carGraphics.fillRoundedRect(48, 25, 12, 6, 2);
+    
+    // Glow accents
+    carGraphics.lineStyle(2, skin.glow, 0.6);
+    carGraphics.strokeRoundedRect(5, 20, 60, 40, 8);
+    carGraphics.strokeRoundedRect(10, 0, 50, 30, 10);
+
+    // License Plate
+    carGraphics.fillStyle(0xfacc15, 1);
+    carGraphics.fillRect(28, 48, 14, 6);
+
+    carGraphics.generateTexture('player-car', 70, 65);
 
     // Light trail
     const trailGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
@@ -343,21 +300,32 @@ export default class MainScene extends Phaser.Scene {
     trailGraphics.fillRect(0, 0, 4, 8);
     trailGraphics.generateTexture('light-trail', 4, 8);
 
-    // Coin Texture - Yellow circle with $C handled in spawnItem via graphics but need base
+    // Obstacle - Rear View Car
+    const enemyGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    enemyGraphics.fillStyle(0x1a1a1a, 1);
+    enemyGraphics.fillRoundedRect(0, 10, 60, 40, 6);
+    enemyGraphics.fillStyle(0x333333, 1);
+    enemyGraphics.fillRoundedRect(5, 0, 50, 20, 8);
+    enemyGraphics.fillStyle(0xff0000, 1); 
+    enemyGraphics.fillRect(5, 20, 10, 4);
+    enemyGraphics.fillRect(45, 20, 10, 4);
+    enemyGraphics.generateTexture('enemy-car', 60, 50);
+
+    // Barrier Obstacle
+    const barGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
+    barGraphics.fillStyle(0x444444);
+    barGraphics.fillRect(0, 20, 100, 30);
+    barGraphics.fillStyle(0xffff00);
+    for(let i=0; i<5; i++) barGraphics.fillRect(i*20, 20, 10, 30);
+    barGraphics.generateTexture('barrier', 100, 50);
+
+    // Coin Texture
     const coinTex = this.make.graphics({ x: 0, y: 0, add: false } as any);
     coinTex.fillStyle(0xfacc15, 1);
     coinTex.fillCircle(30, 30, 30);
-    coinTex.lineStyle(2, 0xffffff, 1);
+    coinTex.lineStyle(3, 0xffffff, 0.5);
     coinTex.strokeCircle(30, 30, 27);
     coinTex.generateTexture('coin-tex', 60, 60);
-
-    // Obstacle Texture - Red Glowing Block
-    const obsGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
-    obsGraphics.fillStyle(0x1a0000, 1);
-    obsGraphics.fillRoundedRect(0, 0, 80, 80, 8);
-    obsGraphics.lineStyle(4, 0xff3e3e, 1);
-    obsGraphics.strokeRoundedRect(0, 0, 80, 80, 8);
-    obsGraphics.generateTexture('obstacle', 80, 80);
 
     // Speed Boost - Green Diamond
     const boostGraphics = this.make.graphics({ x: 0, y: 0, add: false } as any);
@@ -468,83 +436,22 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private spawnObstacle() {
+    if (this.isGameOver || this.isPaused) return;
     const lane = Phaser.Math.Between(0, 2);
-    const obstacle = this.obstacles.create(this.getLaneX(lane), -100, 'obstacle');
-    obstacle.setVelocityY(this.speed);
+    const type = Math.random() > 0.5 ? 'enemy-car' : 'barrier';
+    const obs = this.obstacles.create(0, 0, type);
+    obs.setData('z', 0.01);
+    obs.setData('lane', lane);
   }
 
   private spawnItem() {
-    // Max screen limit: 6 coins
-    const activeCoins = this.items.getChildren().filter(item => item.getData('type') === 'COIN').length;
-    if (activeCoins >= 6) return;
-
+    if (this.isGameOver || this.isPaused) return;
     const lane = Phaser.Math.Between(0, 2);
-    const centerX = this.getLaneX(lane);
-    const rand = Math.random();
-
-    // Speed Boost Powerup (Keep intact but rare)
-    if (rand > 0.95) {
-      const boost = this.items.create(centerX, -100, 'boost-tex');
-      boost.setData('type', 'BOOST');
-      boost.setVelocityY(this.speed);
-      boost.setDepth(100);
-      
-      this.tweens.add({
-          targets: boost,
-          scale: 1.2,
-          alpha: 0.8,
-          duration: 400,
-          yoyo: true,
-          repeat: -1
-      });
-      return;
-    }
-
-    // $C Coin System - 60px diameter
-    const coinGraphics = this.add.graphics();
-    coinGraphics.fillStyle(0xFFD700, 1);
-    coinGraphics.fillCircle(0, 0, 30); // 60px diameter
-    coinGraphics.lineStyle(3, 0xFFFFFF, 1);
-    coinGraphics.strokeCircle(0, 0, 30);
-
-    const coinText = this.add.text(0, 0, '$C', {
-      fontSize: '18px',
-      fontFamily: 'monospace',
-      color: '#000000',
-      fontStyle: 'bold'
-    }).setOrigin(0.5, 0.5);
-
-    const coinContainer = this.add.container(centerX, -50, [coinGraphics, coinText]);
-    coinContainer.setDepth(100);
-    coinContainer.setData('type', 'COIN');
-    
-    // Enable Physics
-    this.physics.world.enable(coinContainer);
-    const body = coinContainer.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(30, -30, -30); // Center the hit area
-
-    // Movement using tween - slower as requested (4000ms)
-    this.tweens.add({
-      targets: coinContainer,
-      y: this.scale.height + 100,
-      duration: 4000,
-      ease: 'Linear',
-      onComplete: () => {
-        coinContainer.destroy();
-      }
-    });
-
-    // Spinning/Pulsing Animation
-    this.tweens.add({
-      targets: coinContainer,
-      scale: 1.15,
-      duration: 600,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
-
-    this.items.add(coinContainer as any);
+    const type = Math.random() > 0.1 ? 'coin-tex' : 'boost-tex';
+    const item = this.items.create(0, 0, type);
+    item.setData('z', 0.01);
+    item.setData('lane', lane);
+    item.setData('type', type === 'coin-tex' ? 'COIN' : 'BOOST');
   }
 
   private handleObstacleCollision(car: any, obstacle: any) {
@@ -630,6 +537,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private gameOver() {
+    this.isGameOver = true;
     this.physics.pause();
     this.isPaused = true;
     AudioService.playGameOver();
@@ -643,30 +551,113 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
+  private drawPseudo3DRoad() {
+    const g = this.roadGraphics;
+    const { width, height } = this.scale;
+    const centerX = width / 2;
+    
+    g.clear();
+    
+    // Draw Main Asphalt (Trapezoid)
+    g.fillStyle(0x1a1a1a, 1);
+    g.beginPath();
+    g.moveTo(centerX - this.roadWidthTop / 2, this.horizonY);
+    g.lineTo(centerX + this.roadWidthTop / 2, this.horizonY);
+    g.lineTo(centerX + this.roadWidthBottom / 2, height);
+    g.lineTo(centerX - this.roadWidthBottom / 2, height);
+    g.closePath();
+    g.fillPath();
+
+    // Road Edges (Rumble strips)
+    this.drawRoadLines(g, centerX, 0.48, 0.52, true);
+
+    // Lane Lines
+    this.drawRoadLines(g, centerX, 0.15, 0.17, false);
+    this.drawRoadLines(g, centerX, -0.15, -0.17, false);
+  }
+
+  private drawRoadLines(g: Phaser.GameObjects.Graphics, centerX: number, leftRel: number, rightRel: number, isEdge: boolean) {
+    const segments = 12;
+    const { height } = this.scale;
+
+    for (let i = 0; i < segments; i++) {
+        const z1 = (i * 100 + (this.roadOffset % 100)) / 1000;
+        const z2 = z1 + 0.05;
+        
+        if (z1 > 1) continue;
+
+        const getY = (z: number) => this.horizonY + (height - this.horizonY) * z;
+        const getX = (z: number, rel: number) => centerX + (this.roadWidthBottom * z * rel);
+
+        const y1 = getY(z1);
+        const y2 = getY(z2);
+
+        if (y1 < this.horizonY) continue;
+
+        g.fillStyle(isEdge ? (Math.floor(z1 * 10) % 2 === 0 ? 0xffffff : 0xff0000) : 0xffffff, isEdge ? 1 : 0.4);
+        g.beginPath();
+        g.moveTo(getX(z1, leftRel), y1);
+        g.lineTo(getX(z1, rightRel), y1);
+        g.lineTo(getX(z2, rightRel), y2);
+        g.lineTo(getX(z2, leftRel), y2);
+        g.closePath();
+        g.fillPath();
+    }
+  }
+
+  private updateObjectsPerspective(delta: number) {
+    const { width, height } = this.scale;
+    const centerX = width / 2;
+    const speedMod = (this.multiplierActive ? 2.5 : 1) * (1 + (this.score / 2000));
+    const zStep = 0.0004 * delta * speedMod;
+
+    [...this.obstacles.getChildren(), ...this.items.getChildren()].forEach((obj: any) => {
+        let z = obj.getData('z') || 0;
+        z += zStep;
+        obj.setData('z', z);
+
+        const targetY = this.horizonY + (height - this.horizonY) * z;
+        const screenX = centerX + ((obj.getData('lane') - 1) * (this.roadWidthBottom * 0.3 * z));
+        
+        obj.x = screenX;
+        obj.y = targetY;
+        obj.setScale(z * 2);
+        obj.setDepth(targetY);
+
+        if (z > 1.1) {
+          obj.destroy();
+        }
+    });
+  }
+
   update(time: number, delta: number) {
     if (this.isPaused) return;
 
-    const scrollSpeed = (this.speed * delta) / 1000;
-    this.distance += scrollSpeed / 50;
+    const speedMod = (this.multiplierActive ? 2.5 : 1) * (1 + (this.score / 2000));
+    const scrollAmount = this.speed * speedMod * delta / 1000;
+    
+    this.roadOffset += scrollAmount;
+    this.distance += scrollAmount / 50;
     
     const currentMult = this.multiplierActive ? 2 : 1;
     if (currentMult > this.maxMultiplier) this.maxMultiplier = currentMult;
 
-    const limitY = this.scale.height + 100;
+    this.drawPseudo3DRoad();
 
-    // Frame-rate independent scrolling
-    this.roadGroup.getChildren().forEach((line: any) => {
-      line.y += scrollSpeed;
-      if (line.y > limitY) line.y = -100;
+    // Player and Parallax
+    const targetX = (this.scale.width / 2) + ((this.currentLane - 1) * (this.roadWidthBottom * 0.3 * 0.85)); // 0.85 is player Z approx
+    this.vehicle.x = Phaser.Math.Linear(this.vehicle.x, targetX, 0.1);
+    
+    const sprite = this.vehicle.getAt(0) as Phaser.GameObjects.Image;
+    if (this.currentLane === 0) sprite.setAngle(Phaser.Math.Linear(sprite.angle, -5, 0.1));
+    else if (this.currentLane === 2) sprite.setAngle(Phaser.Math.Linear(sprite.angle, 5, 0.1));
+    else sprite.setAngle(Phaser.Math.Linear(sprite.angle, 0, 0.1));
+
+    this.skylineLayers.forEach((layer, i) => {
+        layer.x = (this.scale.width / 2 - this.vehicle.x) * (0.05 * (i + 1));
     });
 
-    // Cleanup
-    this.obstacles.getChildren().forEach((obs: any) => {
-      if (obs.y > limitY) obs.destroy();
-    });
-    this.items.getChildren().forEach((item: any) => {
-      if (item.y > limitY) item.destroy();
-    });
+    this.updateObjectsPerspective(delta);
 
     // Update HUD
     if (this.scoreText) this.scoreText.setText(`SCORE: ${this.score}`);
