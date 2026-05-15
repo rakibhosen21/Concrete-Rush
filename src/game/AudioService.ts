@@ -7,6 +7,7 @@ export class AudioService {
   
   private static reverb: ConvolverNode | null = null;
   private static musicIntervals: any[] = [];
+  private static masterMusicGain: GainNode | null = null;
 
   private static createReverb(duration: number, decay: number) {
     const sampleRate = this.ctx!.sampleRate;
@@ -28,6 +29,9 @@ export class AudioService {
       this.reverb = this.ctx.createConvolver();
       this.reverb.buffer = this.createReverb(2, 2);
       this.reverb.connect(this.ctx.destination);
+
+      this.masterMusicGain = this.ctx.createGain();
+      this.masterMusicGain.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
@@ -38,31 +42,36 @@ export class AudioService {
     this.isMuted = !this.isMuted;
     if (this.isMuted) {
       this.stopEngine();
-      this.stopBGM();
+      if (this.masterMusicGain) {
+        this.masterMusicGain.gain.setValueAtTime(0, this.ctx!.currentTime);
+      }
     } else {
-      this.startBGM();
+      if (this.masterMusicGain) {
+        this.masterMusicGain.gain.setTargetAtTime(1, this.ctx!.currentTime, 0.1);
+      }
     }
     return this.isMuted;
   }
 
-  static startBGM() {
+  static startMenuBGM() {
     if (this.isMuted) return;
     this.init();
-    if (this.musicIntervals.length > 0) return;
+    
+    // Stop any existing BGM
+    this.stopBGM();
 
     const ctx = this.ctx!;
-    const dest = this.reverb!;
+    const dest = this.masterMusicGain!;
     
     // 90 BPM Settings
-    const beatTime = 60 / 90; // 0.666s
+    const beatTime = 60 / 90;
     const eighthTime = beatTime / 2;
 
-    // 1. Smooth Chord Pads (Cm, Eb, Fm, Bb)
     const chords = [
-      [130.81, 155.56, 196.00], // C3, Eb3, G3 (Cm)
-      [155.56, 196.00, 233.08], // Eb3, G3, Bb3 (Eb)
-      [174.61, 207.65, 261.63], // F3, Ab3, C4 (Fm)
-      [116.54, 146.83, 174.61]  // Bb2, D3, F3 (Bb)
+      [130.81, 155.56, 196.00], // Cm
+      [155.56, 196.00, 233.08], // Eb
+      [174.61, 207.65, 261.63], // Fm
+      [116.54, 146.83, 174.61]  // Bb
     ];
     let chordIdx = 0;
 
@@ -75,9 +84,10 @@ export class AudioService {
         osc.frequency.setValueAtTime(freq, t);
         const g = ctx.createGain();
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.04, t + 1); // Soft attack
-        g.gain.linearRampToValueAtTime(0, t + 4);    // Long decay
+        g.gain.linearRampToValueAtTime(0.04, t + 1);
+        g.gain.linearRampToValueAtTime(0, t + 4);
         osc.connect(g);
+        g.connect(this.reverb!);
         g.connect(dest);
         osc.start(t);
         osc.stop(t + 4.1);
@@ -85,8 +95,7 @@ export class AudioService {
       chordIdx = (chordIdx + 1) % chords.length;
     };
 
-    // 2. Gentle Arpeggio (Sine)
-    const arps = [523.25, 587.33, 622.25, 698.46, 783.99]; // C5, D5, Eb5, F5, G5
+    const arps = [523.25, 587.33, 622.25, 698.46, 783.99]; 
     let arpIdx = 0;
     const playArp = () => {
       const t = ctx.currentTime;
@@ -95,16 +104,16 @@ export class AudioService {
       osc.frequency.setValueAtTime(arps[arpIdx], t);
       const g = ctx.createGain();
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.06, t + 0.1);
+      g.gain.linearRampToValueAtTime(0.05, t + 0.1);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
       osc.connect(g);
+      g.connect(this.reverb!);
       g.connect(dest);
       osc.start(t);
       osc.stop(t + 0.85);
       arpIdx = (arpIdx + 1) % arps.length;
     };
 
-    // 3. Subtle Kick (Every 2s)
     const playKick = () => {
       const t = ctx.currentTime;
       const osc = ctx.createOscillator();
@@ -112,18 +121,106 @@ export class AudioService {
       osc.frequency.setValueAtTime(60, t);
       osc.frequency.exponentialRampToValueAtTime(30, t + 0.2);
       const g = ctx.createGain();
-      g.gain.setValueAtTime(0.1, t);
+      g.gain.setValueAtTime(0.08, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
       osc.connect(g);
-      g.connect(ctx.destination);
+      g.connect(dest);
       osc.start(t);
       osc.stop(t + 0.35);
     };
 
     playChord();
-    this.musicIntervals.push(setInterval(playChord, beatTime * 4 * 1000)); // Every 4 beats
-    this.musicIntervals.push(setInterval(playArp, eighthTime * 1000));    // Every half beat
-    this.musicIntervals.push(setInterval(playKick, 2000));                // Every 2s
+    this.musicIntervals.push(setInterval(playChord, beatTime * 4 * 1000));
+    this.musicIntervals.push(setInterval(playArp, eighthTime * 1000));
+    this.musicIntervals.push(setInterval(playKick, 2000));
+  }
+
+  static startGameBGM() {
+    if (this.isMuted) return;
+    this.init();
+    this.stopBGM();
+
+    const ctx = this.ctx!;
+    const dest = this.masterMusicGain!;
+    
+    // 140 BPM Settings - High Energy Chase
+    const beatTime = 60 / 140;
+    const quarterTime = beatTime;
+
+    const playBass = () => {
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(40, t);
+      osc.frequency.exponentialRampToValueAtTime(30, t + 0.1);
+      
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(400, t);
+      filter.frequency.exponentialRampToValueAtTime(200, t + 0.1);
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.15, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      
+      osc.connect(filter);
+      filter.connect(g);
+      g.connect(dest);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    };
+
+    const playSnare = () => {
+      const t = ctx.currentTime;
+      const noise = ctx.createBufferSource();
+      const bufSize = ctx.sampleRate * 0.1;
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0; i<bufSize; i++) data[i] = Math.random() * 2 - 1;
+      noise.buffer = buf;
+
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.setValueAtTime(1000, t);
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+
+      noise.connect(hp);
+      hp.connect(g);
+      g.connect(dest);
+      noise.start(t);
+    };
+
+    const playLead = () => {
+      const t = ctx.currentTime;
+      const f = [110, 123.47, 130.81, 146.83][Math.floor(Math.random() * 4)] * 2;
+      const osc = ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(f, t);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.03, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      osc.connect(g);
+      g.connect(dest);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    };
+
+    let step = 0;
+    const sequencer = () => {
+      if (step % 2 === 0) playBass();
+      if (step % 4 === 2) playSnare();
+      if (step % 1 === 0) playLead();
+      step = (step + 1) % 16;
+    };
+
+    this.musicIntervals.push(setInterval(sequencer, (quarterTime / 2) * 1000));
+  }
+
+  static startBGM() {
+    this.startMenuBGM();
   }
 
   static stopBGM() {

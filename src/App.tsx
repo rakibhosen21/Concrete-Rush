@@ -1,23 +1,28 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { TrendingUp, User, BarChart3, LogOut, ShoppingBag } from 'lucide-react';
+import { TrendingUp, BarChart3, ShoppingBag } from 'lucide-react';
 import { LandingPage } from './components/LandingPage';
 import { GameOverOverlay } from './components/GameOverOverlay';
 import { PauseOverlay } from './components/PauseOverlay';
 import { IntroLoader } from './components/IntroLoader';
-import { ProfileSetup } from './components/ProfileSetup';
-import { ProfileDossier } from './components/ProfileDossier';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { AccountSetup } from './components/AccountSetup';
 import { Garage } from './components/Garage';
 import { Logo } from './components/Logo';
-import { SocialLinks } from './components/SocialLinks';
 import { AudioService } from './game/AudioService';
 
 const GameContainer = lazy(() => import('./components/GameContainer').then(m => ({ default: m.GameContainer })));
 
-export type GameState = 'ACCOUNT_SETUP' | 'INTRO' | 'PROFILE_SETUP' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+export type GameState = 'INTRO' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+
+const INITIAL_STATS = {
+  totalCoins: 0,
+  bestScore: 0,
+  bestDistance: 0,
+  gamesPlayed: 0,
+  unlockedSkins: ['NEURAL RUNNER'],
+  equippedSkin: 'NEURAL RUNNER'
+};
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>('INTRO');
@@ -26,104 +31,45 @@ export default function App() {
   const [health, setHealth] = useState(3);
   const [multiplier, setMultiplier] = useState(1);
   const [gameOverData, setGameOverData] = useState<{ score: number; cCollected: number; distance: number; multiplier: number } | null>(null);
-  const [showProfile, setShowProfile] = useState(false);
   const [showGarage, setShowGarage] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
   const [userStats, setUserStats] = useState<any>(null);
 
   useEffect(() => {
-    const agentId = localStorage.getItem('concrete_agent_id');
-    if (agentId) {
-      fetchUserStats(agentId);
-      // Start BGM on user interaction or app load if permitted
-      AudioService.startBGM(); 
+    // Lead stats from local storage
+    const savedStats = localStorage.getItem('concrete_user_stats');
+    if (savedStats) {
+      setUserStats(JSON.parse(savedStats));
     } else {
-      setGameState('ACCOUNT_SETUP');
+      setUserStats(INITIAL_STATS);
+      localStorage.setItem('concrete_user_stats', JSON.stringify(INITIAL_STATS));
     }
-
-    const savedProfile = localStorage.getItem('concrete_profile');
-    if (savedProfile) {
-      setProfile(JSON.parse(savedProfile));
-    }
+    
+    // Initial BGM
+    AudioService.startMenuBGM();
   }, []);
 
-  const fetchUserStats = async (username: string) => {
-    try {
-      const res = await fetch(`/api/user/${username}`);
-      if (res.ok) {
-        const data = await res.json();
-        setUserStats(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch user stats');
-    }
+  const saveStats = (newStats: any) => {
+    setUserStats(newStats);
+    localStorage.setItem('concrete_user_stats', JSON.stringify(newStats));
   };
 
-  const handleAccountComplete = (username: string) => {
-    fetchUserStats(username);
-    setGameState('INTRO');
-    AudioService.startBGM();
-  };
-
-  const handleProfileComplete = (newProfile: any) => {
-    const fullProfile = {
-      ...newProfile,
-      firstVisit: false,
-      totalYield: 0,
-      gamesPlayed: 0,
-      bestDistance: 0,
-      highScore: 0,
-      lastPlayedTime: Date.now()
-    };
-    setProfile(fullProfile);
-    localStorage.setItem('concrete_profile', JSON.stringify(fullProfile));
-    setGameState('HOME');
-  };
-
-  const handleLogout = () => {
-    if (window.confirm('TERMINATE SESSION?')) {
-      resetIdentity();
-    }
-  };
-
-  const resetIdentity = () => {
-    localStorage.clear();
-    setProfile(null);
-    setUserStats(null);
-    setGameState('ACCOUNT_SETUP');
-    setShowProfile(false);
-  };
-
-  const handleGameOver = async (data: { score: number; cCollected: number; distance: number; multiplier: number }) => {
+  const handleGameOver = (data: { score: number; cCollected: number; distance: number; multiplier: number }) => {
     setScore(data.score);
     setCCollected(data.cCollected);
     setGameOverData(data);
     
-    // Update stats on server
-    const agentId = localStorage.getItem('concrete_agent_id');
-    if (agentId) {
-      try {
-        const res = await fetch('/api/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: agentId,
-            score: data.score,
-            coinsCollected: data.cCollected,
-            distance: Math.floor(data.distance)
-          })
-        });
-        if (res.ok) {
-          const updatedUser = await res.json();
-          setUserStats(updatedUser.user);
-        }
-      } catch (err) {
-        console.error('Failed to update stats');
-      }
-    }
+    const newStats = {
+      ...userStats,
+      bestScore: Math.max(userStats.bestScore, data.score),
+      bestDistance: Math.max(userStats.bestDistance, data.distance),
+      totalCoins: userStats.totalCoins + data.cCollected,
+      gamesPlayed: userStats.gamesPlayed + 1
+    };
+    saveStats(newStats);
 
     setGameState('GAME_OVER');
+    AudioService.startMenuBGM(); // Transition back to menu music
   };
 
   const startGame = () => {
@@ -133,6 +79,7 @@ export default function App() {
     setMultiplier(1);
     setIsPaused(false);
     setGameState('PLAYING');
+    AudioService.startGameBGM(); // Transition to game music
   };
 
   const handlePause = (paused: boolean) => {
@@ -141,8 +88,6 @@ export default function App() {
 
   const resumeGame = () => {
     setIsPaused(false);
-    // Directly tell the scene if needed, but the PauseOverlay button will call this
-    // We can emit an event back to Phaser if needed
     window.dispatchEvent(new CustomEvent('phaser-resume'));
   };
 
@@ -150,37 +95,22 @@ export default function App() {
     <ErrorBoundary>
       <div className="w-full h-svh bg-[#050208] text-white overflow-hidden select-none flex flex-col items-center justify-center relative">
         
-        {/* FIXED BRANDING HEADER - Always Visible */}
+        {/* FIXED BRANDING HEADER */}
         <div className="fixed top-0 left-0 right-0 z-[9999] p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
           <div className="flex items-center gap-4">
             <div className="pointer-events-auto">
               <Logo />
             </div>
-            {userStats && (
-              <div className="hidden sm:flex flex-col pointer-events-auto">
-                <div className="text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-1">Agent_Connected</div>
-                <div className="flex items-center gap-3">
-                  <div className="text-xs font-black italic text-cyan-400 uppercase tracking-widest">{userStats.username}</div>
-                  <button 
-                    onClick={handleLogout}
-                    className="p-1 hover:text-red-500 transition-colors pointer-events-auto"
-                    title="Terminate Session"
-                  >
-                    <LogOut size={14} />
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
           
           <div className="hidden sm:flex items-center gap-6 pointer-events-auto">
             {userStats && (
                <button 
                 onClick={() => setShowGarage(true)}
-                className="flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 px-4 py-2 rounded-lg hover:bg-yellow-400/20 transition-all group"
+                className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-400/30 px-4 py-2 rounded-lg hover:bg-cyan-400/20 transition-all group"
                >
-                 <BarChart3 size={16} className="text-yellow-400 group-hover:scale-110 transition-transform" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Garage</span>
+                 <ShoppingBag size={16} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                 <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Garage</span>
                </button>
             )}
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
@@ -190,58 +120,25 @@ export default function App() {
           </div>
         </div>
 
-        {/* ... (rest of profile bar) ... */}
-        {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && profile && (
+        {gameState === 'PLAYING' && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute top-16 sm:top-20 left-0 right-0 z-[100] p-4 flex items-center justify-between pointer-events-none overflow-hidden"
+            className="absolute top-16 sm:top-20 left-0 right-0 z-[100] p-4 flex items-center justify-end pointer-events-none overflow-hidden"
           >
-            {/* Scan Line Overlay */}
-            <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
-              <div className="h-full w-20 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-scan" />
-            </div>
-            
-            <div 
-              onClick={() => setShowProfile(true)}
-              className="flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-xl border border-white/5 p-1 sm:p-1.5 pr-3 sm:pr-4 rounded-full cursor-pointer hover:bg-zinc-900 transition-all group pointer-events-auto shadow-2xl overflow-hidden max-w-[200px] sm:max-w-[300px]"
-            >
-              <div className="text-sm sm:text-lg bg-zinc-800 w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center rounded-full text-white shrink-0 group-hover:bg-yellow-400 group-hover:text-black transition-colors">
-                {profile.avatar}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tighter text-white leading-none mb-0.5 group-hover:text-yellow-400 transition-colors truncate">{profile.displayName || profile.name}</span>
-                <div className="flex items-center gap-1">
-                  <div className="w-1 h-1 rounded-full bg-cyan-400 shrink-0" />
-                  <span className="text-[6px] sm:text-[7px] font-mono text-zinc-500 uppercase tracking-widest leading-none truncate opacity-60 group-hover:opacity-100 transition-opacity">@{profile.username || profile.codename || 'AGENT'}</span>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
+                <span className="text-[10px] font-mono text-cyan-400 tabular-nums">{userStats?.totalCoins || 0} $C</span>
               </div>
             </div>
-
-            {gameState === 'PLAYING' && (
-              <div className="flex items-center gap-3">
-                <div className="bg-black/60 backdrop-blur-xl border border-white/5 px-3 py-1.5 rounded-full">
-                  <span className="text-[10px] font-mono text-cyan-400 tabular-nums">{userStats?.totalCoins || 0} $C</span>
-                </div>
-              </div>
-            )}
           </motion.div>
         )}
 
-        {/* ... */}
         <div className="relative z-10 w-full max-w-7xl flex items-center justify-center gap-4 sm:gap-8 lg:gap-12 px-4 sm:px-8">
           
-          {/* ... */}
-          {gameState !== 'INTRO' && gameState !== 'PROFILE_SETUP' && (
+          {gameState === 'HOME' && (
             <div className="hidden lg:flex flex-col gap-6 w-64 xl:w-72">
               <div className="bg-zinc-900 border border-white/5 p-5 xl:p-6 rounded-xl space-y-4">
-                <button 
-                  onClick={() => setShowProfile(true)}
-                  className="w-full bg-black/40 hover:bg-yellow-400/10 hover:border-yellow-400/30 border border-white/5 p-4 rounded-lg flex items-center gap-4 transition-all group"
-                >
-                  <BarChart3 size={18} className="text-yellow-400 opacity-40 group-hover:opacity-100" />
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Dossier</span>
-                </button>
                 <button 
                   onClick={() => setShowGarage(true)}
                   className="w-full bg-black/40 hover:bg-cyan-400/10 hover:border-cyan-400/30 border border-white/5 p-4 rounded-lg flex items-center gap-4 transition-all group"
@@ -249,6 +146,10 @@ export default function App() {
                   <ShoppingBag size={18} className="text-cyan-400 opacity-40 group-hover:opacity-100" />
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Vehicle Garage</span>
                 </button>
+                <div className="pt-4 border-t border-white/5">
+                  <div className="text-[8px] text-zinc-500 uppercase tracking-widest mb-2">High Score</div>
+                  <div className="text-xl font-black italic text-yellow-400 tracking-tighter">{(userStats?.bestScore || 0).toLocaleString()}</div>
+                </div>
               </div>
             </div>
           )}
@@ -268,7 +169,6 @@ export default function App() {
               />
             </Suspense>
           </div>
-          {/* ... */}
 
           {/* Right Panel - Realtime Data */}
           {gameState === 'PLAYING' && (
@@ -320,16 +220,8 @@ export default function App() {
 
         {/* Overlay UI */}
         <AnimatePresence mode="wait">
-          {gameState === 'ACCOUNT_SETUP' && (
-            <AccountSetup onComplete={handleAccountComplete} />
-          )}
-
           {gameState === 'INTRO' && (
-            <IntroLoader key="intro" onComplete={() => setGameState(profile ? 'HOME' : 'PROFILE_SETUP')} />
-          )}
-
-          {gameState === 'PROFILE_SETUP' && (
-            <ProfileSetup key="setup" onComplete={handleProfileComplete} />
+            <IntroLoader key="intro" onComplete={() => setGameState('HOME')} />
           )}
 
           {gameState === 'HOME' && (
@@ -358,7 +250,10 @@ export default function App() {
                 distance={gameOverData.distance}
                 multiplier={gameOverData.multiplier}
                 onRestart={startGame} 
-                onHome={() => setGameState('HOME')} 
+                onHome={() => {
+                  setGameState('HOME');
+                  AudioService.startMenuBGM();
+                }} 
                 userStats={userStats}
               />
             </motion.div>
@@ -367,20 +262,21 @@ export default function App() {
           {isPaused && gameState === 'PLAYING' && (
              <PauseOverlay 
                 onResume={resumeGame} 
-                onHome={() => setGameState('HOME')} 
+                onHome={() => {
+                  setGameState('HOME');
+                  AudioService.startMenuBGM();
+                }} 
              />
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {showProfile && (
-            <ProfileDossier onClose={() => setShowProfile(false)} onReset={resetIdentity} userStats={userStats} />
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
           {showGarage && userStats && (
-            <Garage onClose={() => setShowGarage(false)} userStats={userStats} onUpdateUser={setUserStats} />
+            <Garage 
+              onClose={() => setShowGarage(false)} 
+              userStats={userStats} 
+              onUpdateUser={saveStats} 
+            />
           )}
         </AnimatePresence>
       </div>

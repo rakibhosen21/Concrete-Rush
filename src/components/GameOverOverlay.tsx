@@ -14,7 +14,6 @@ interface GameOverOverlayProps {
 }
 
 export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, cCollected, distance, multiplier, onRestart, onHome, userStats }) => {
-  const profile = JSON.parse(localStorage.getItem('concrete_profile') || '{}');
   const [copied, setCopied] = useState(false);
   
   const getGrade = (s: number) => {
@@ -29,7 +28,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, cCollec
   const bestScore = userStats?.bestScore || score;
   
   const handleShare = () => {
-    const text = `Operative ${profile.name} complete. Yield capture: ${score}. Distance: ${distance}m. Node status: STABLE. Run concrete-rush.online`;
+    const text = `Operative complete. Yield capture: ${score}. Distance: ${distance}m. Node status: STABLE. Run concrete-rush.online`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

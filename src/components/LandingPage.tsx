@@ -89,7 +89,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
              <div className="absolute inset-0 holographic-bg" />
           </div>
 
-          <div className="relative pointer-events-auto z-10 flex flex-col sm:flex-row gap-4">
+          <div className="relative pointer-events-auto z-10 flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
             <motion.button 
               onClick={() => {
                 AudioService.playClick();
@@ -97,7 +97,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
               }}
               onMouseEnter={() => setIsHovering(true)}
               onMouseLeave={() => setIsHovering(false)}
-              className="skew-btn px-10 sm:px-20 py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative"
+              className="w-full skew-btn py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative"
             >
               <span className="relative z-10">INITIALIZE ENGINE</span>
             </motion.button>
@@ -107,17 +107,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
                 AudioService.playClick();
                 onGarageOpen();
               }}
-              className="skew-btn px-8 sm:px-12 py-4 sm:py-6 bg-cyan-500/20 text-cyan-400 border border-cyan-400/30 font-black uppercase italic tracking-[0.2em] text-sm sm:text-lg transition-all hover:bg-cyan-400 hover:text-black hover:scale-105 active:scale-95 z-20"
+              className="w-full skew-btn py-4 sm:py-6 bg-cyan-500/20 text-cyan-400 border border-cyan-400/30 font-black uppercase italic tracking-[0.2em] text-sm sm:text-lg transition-all hover:bg-cyan-400 hover:text-black hover:scale-105 active:scale-95 z-20"
             >
               VEHICLE_GARAGE
             </button>
 
-            <button 
-              onClick={toggleMute}
-              className="p-4 sm:p-6 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-white/10 transition-all group"
+            <a 
+              href="https://www.concrete.xyz/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => AudioService.playClick()}
+              className="w-full skew-btn py-4 bg-black border border-cyan-400/50 text-cyan-400 font-black uppercase italic tracking-[0.2em] text-sm transition-all hover:bg-cyan-400/10 hover:border-cyan-400 active:scale-95 text-center flex items-center justify-center gap-2"
             >
-              {isMuted ? <VolumeX className="text-red-500" /> : <Volume2 className="text-cyan-400" />}
-            </button>
+              EXPLORE CONCRETE
+            </a>
+
+            <a 
+              href="https://points.concrete.xyz/home" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => AudioService.playClick()}
+              className="w-full skew-btn py-4 bg-black border border-yellow-400/50 text-yellow-400 font-black uppercase italic tracking-[0.2em] text-sm transition-all hover:bg-yellow-400/10 hover:border-yellow-400 active:scale-95 text-center flex items-center justify-center gap-2"
+            >
+              DAILY CHECK-IN ✓
+            </a>
 
             <div className={`absolute -inset-4 bg-yellow-400/5 blur-2xl rounded-full -z-10 transition-opacity duration-300 ${isHovering ? 'opacity-100' : 'opacity-0'}`} />
           </div>

@@ -34,45 +34,44 @@ export const Garage: React.FC<GarageProps> = ({ onClose, userStats, onUpdateUser
   const isUnlocked = userStats?.unlockedSkins?.includes(currentSkin.id);
   const isEquipped = userStats?.equippedSkin === currentSkin.id;
 
-  const handleAction = async () => {
+  const handleAction = () => {
     if (isLoading) return;
     setIsLoading(true);
     setError(null);
 
     const action = isUnlocked ? 'EQUIP' : 'UNLOCK';
     
-    try {
-      const res = await fetch('/api/garage/action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: userStats.username,
-          action,
-          skinId: currentSkin.id,
-          cost: currentSkin.price
-        })
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        onUpdateUser(data.user);
+    // Simulate delay for feel
+    setTimeout(() => {
+      if (action === 'UNLOCK') {
+        if (userStats.totalCoins < currentSkin.price) {
+          setError('Insufficient $C balance');
+          setIsLoading(false);
+          return;
+        }
+        
+        onUpdateUser({
+          ...userStats,
+          totalCoins: userStats.totalCoins - currentSkin.price,
+          unlockedSkins: [...userStats.unlockedSkins, currentSkin.id]
+        });
       } else {
-        setError(data.error);
+        onUpdateUser({
+          ...userStats,
+          equippedSkin: currentSkin.id
+        });
       }
-    } catch (err) {
-      setError('Connection failure');
-    } finally {
       setIsLoading(false);
-    }
+    }, 400);
   };
 
   return (
     <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex flex-col pointer-events-auto">
       {/* Header */}
-      <div className="p-6 flex items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-md">
+      <div className="p-6 relative flex items-center justify-center border-b border-white/5 bg-black/40 backdrop-blur-md">
         <button 
           onClick={onClose} 
-          className="flex items-center gap-1.5 text-cyan-400 hover:text-white transition-colors group active:scale-95"
+          className="absolute left-6 flex items-center gap-1.5 text-cyan-400 hover:text-white transition-colors group active:scale-95 z-0"
         >
           <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
           <span className="text-[10px] font-black uppercase tracking-widest">Back_to_Base</span>
@@ -81,7 +80,7 @@ export const Garage: React.FC<GarageProps> = ({ onClose, userStats, onUpdateUser
           <h2 className="text-xl font-black italic tracking-tighter uppercase">Operations_Garage</h2>
           <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">Vehicle Customization Hub</div>
         </div>
-        <div className="flex items-center gap-2 bg-yellow-400/10 px-4 py-2 rounded-lg border border-yellow-400/20">
+        <div className="absolute right-6 flex items-center gap-2 bg-yellow-400/10 px-4 py-2 rounded-lg border border-yellow-400/20">
           <Zap size={14} className="text-yellow-400" />
           <span className="text-sm font-black italic text-yellow-400 tabular-nums">{userStats?.totalCoins || 0} $C</span>
         </div>
