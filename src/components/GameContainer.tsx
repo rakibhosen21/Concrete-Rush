@@ -46,16 +46,35 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       gameRef.current = game;
       game.registry.set('userStats', userStats);
 
-      game.events.on('update-score', onScoreUpdate);
-      game.events.on('update-c-collected', onCCollectedUpdate);
-      game.events.on('update-health', onHealthUpdate);
-      game.events.on('update-multiplier', onMultiplierUpdate);
-      game.events.on('game-over', onGameOver);
-      game.events.on('game-paused', onPauseUpdate);
+      const scoreHandler = (v: number) => onScoreUpdate(v);
+      const cHandler = (v: number) => onCCollectedUpdate(v);
+      const healthHandler = (v: number) => onHealthUpdate(v);
+      const multHandler = (v: number) => onMultiplierUpdate(v);
+      const overHandler = (d: any) => onGameOver(d);
+      const pauseHandler = (v: boolean) => onPauseUpdate(v);
+
+      game.events.on('update-score', scoreHandler);
+      game.events.on('update-c-collected', cHandler);
+      game.events.on('update-health', healthHandler);
+      game.events.on('update-multiplier', multHandler);
+      game.events.on('game-over', overHandler);
+      game.events.on('game-paused', pauseHandler);
+
+      (game as any)._cleanupHandlers = () => {
+        game.events.off('update-score', scoreHandler);
+        game.events.off('update-c-collected', cHandler);
+        game.events.off('update-health', healthHandler);
+        game.events.off('update-multiplier', multHandler);
+        game.events.off('game-over', overHandler);
+        game.events.off('game-paused', pauseHandler);
+      };
     }
 
     return () => {
       if (gameRef.current) {
+        if ((gameRef.current as any)._cleanupHandlers) {
+          (gameRef.current as any)._cleanupHandlers();
+        }
         gameRef.current.destroy(true);
         gameRef.current = null;
       }
@@ -77,7 +96,20 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     if (gameRef.current) {
         if (gameState === 'PLAYING') {
           gameRef.current.scene.stop('MenuScene');
-          gameRef.current.scene.start('MainScene');
+
+          const sceneManager = gameRef.current.scene;
+          const mainScene = sceneManager.getScene('MainScene');
+
+          if (mainScene && (sceneManager.isActive('MainScene') || sceneManager.isPaused('MainScene') || sceneManager.isSleeping('MainScene'))) {
+            sceneManager.stop('MainScene');
+            setTimeout(() => {
+              if (gameRef.current) {
+                gameRef.current.scene.start('MainScene');
+              }
+            }, 50);
+          } else {
+            sceneManager.start('MainScene');
+          }
         } else if (gameState === 'HOME' || gameState === 'INTRO') {
           gameRef.current.scene.stop('MainScene');
           gameRef.current.scene.start('MenuScene');
@@ -92,7 +124,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     setIsMuted(muted);
   };
 
-   const moveCar = (dir: -1 | 1) => {
+  const moveCar = (dir: -1 | 1) => {
     if (gameRef.current && gameState === 'PLAYING') {
        gameRef.current.events.emit('move-car', dir);
     }
@@ -115,7 +147,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           className="w-full h-full relative"
         />
 
-        {/* Mute Button */}
         <button 
           onClick={toggleMute}
           className="absolute top-4 right-4 z-50 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/60 hover:text-yellow-400 transition-all active:scale-95 pointer-events-auto"
@@ -123,7 +154,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
 
-        {/* Pause Trigger - Mobile tap top center */}
         <div 
           onClick={() => {
               if (gameRef.current && gameState === 'PLAYING') {
@@ -135,7 +165,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         />
       </div>
 
-      {/* Mobile Controls - Portrait Mode Bottom Bar */}
       {gameState === 'PLAYING' && (
         <div className="lg:hidden w-full h-[100px] shrink-0 pointer-events-none flex gap-2 z-30 mt-4 px-2">
            <button 
