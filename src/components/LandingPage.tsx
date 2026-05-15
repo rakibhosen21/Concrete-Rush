@@ -64,6 +64,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
 
   return (
     <div className="min-h-screen w-full bg-black text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
+      <style>{`
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(250, 204, 21, 0.2); }
+          50% { box-shadow: 0 0 40px rgba(250, 204, 21, 0.4); }
+        }
+        @keyframes shimmer-scan {
+          0% { transform: translateX(-100%) skewX(-20deg); }
+          100% { transform: translateX(200%) skewX(-20deg); }
+        }
+        @keyframes border-flow {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: 100; }
+        }
+        @keyframes glitch-anim {
+          0% { transform: translate(0); }
+          20% { transform: translate(-2px, 1px); }
+          40% { transform: translate(2px, -1px); }
+          60% { transform: translate(-1px, -1px); }
+          80% { transform: translate(1px, 2px); }
+          100% { transform: translate(0); }
+        }
+        @keyframes shine-gold {
+          0% { left: -100%; opacity: 0; }
+          50% { opacity: 0.5; }
+          100% { left: 100%; opacity: 0; }
+        }
+        .glow-pulse { animation: pulse-glow 3s infinite ease-in-out; }
+        .shimmer-anim { animation: shimmer-scan 4s infinite linear; }
+        .gold-sweep { animation: shine-gold 3s infinite linear; }
+        .glitch-hover:hover .glitch-text { animation: glitch-anim 0.2s infinite; }
+      `}</style>
+
       {/* Immersive Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900/10 to-black pointer-events-none z-0" />
       
@@ -127,30 +159,60 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
           className="flex flex-col items-center gap-6 sm:gap-10 w-full relative"
         >
           <div className="relative pointer-events-auto z-10 flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
+            {/* 1. INITIALIZE ENGINE */}
             <motion.button 
               onClick={checkOrientationAndStart}
               onMouseEnter={() => setIsHovering(true)}
               onMouseLeave={() => setIsHovering(false)}
-              className="w-full skew-btn py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative overflow-hidden"
+              className="w-full skew-btn py-4 sm:py-6 bg-yellow-400 text-black font-black uppercase italic tracking-[0.3em] text-base sm:text-xl transition-all hover:bg-white hover:scale-105 active:scale-95 z-20 group relative overflow-hidden glow-pulse shadow-yellow-400/20"
             >
               <span className="relative z-10">INITIALIZE ENGINE</span>
-              <motion.div 
-                className="absolute inset-0 bg-white/20"
-                initial={{ x: '-100%' }}
-                whileHover={{ x: '100%' }}
-                transition={{ duration: 0.6 }}
-              />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full shimmer-anim -skew-x-12" />
             </motion.button>
             
+            {/* 2. VEHICLE_GARAGE */}
             <button 
               onClick={() => {
                 AudioService.playClick();
                 onGarageOpen();
               }}
-              className="w-full skew-btn py-4 sm:py-6 bg-cyan-500/20 text-cyan-400 border border-cyan-400/30 font-black uppercase italic tracking-[0.2em] text-sm sm:text-lg transition-all hover:bg-cyan-400 hover:text-black hover:scale-105 active:scale-95 z-20"
+              className="w-full skew-btn py-4 sm:py-6 bg-cyan-500/10 text-cyan-400 border border-cyan-400/30 font-black uppercase italic tracking-[0.2em] text-sm sm:text-lg transition-all hover:bg-cyan-400 hover:text-black hover:scale-105 active:scale-95 z-20 group relative overflow-hidden"
             >
-              VEHICLE_GARAGE
+              <div className="absolute inset-0 opacity-20 pointer-events-none">
+                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <rect width="100" height="100" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5,5" className="animate-[spin_10s_linear_infinite]" style={{ transformOrigin: 'center' }} />
+                </svg>
+              </div>
+              <span className="relative z-10">VEHICLE_GARAGE</span>
             </button>
+
+            {/* 3. EXPLORE CONCRETE */}
+            <a 
+              href="https://www.concrete.xyz/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => AudioService.playClick()}
+              className="w-full skew-btn py-4 bg-black border border-cyan-400 text-cyan-400 font-black uppercase italic tracking-[0.2em] text-sm transition-all hover:bg-cyan-400/20 active:scale-95 text-center flex items-center justify-center gap-2 group relative overflow-hidden glitch-hover"
+            >
+              <span className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400 group-hover:scale-110 transition-transform" />
+              <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400 group-hover:scale-110 transition-transform" />
+              <span className="relative z-10 glitch-text tracking-widest">EXPLORE CONCRETE</span>
+            </a>
+
+            {/* 4. DAILY CHECK-IN ✓ */}
+            <a 
+              href="https://points.concrete.xyz/home" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => AudioService.playClick()}
+              className="w-full skew-btn py-4 bg-black border border-yellow-400/50 text-yellow-500 font-black uppercase italic tracking-[0.2em] text-sm transition-all hover:bg-yellow-400/20 active:scale-95 text-center flex items-center justify-center gap-2 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-white/10 gold-sweep -skew-x-20" />
+              <span className="relative z-10 flex items-center gap-2">
+                DAILY CHECK-IN 
+                <span className="group-hover:scale-125 group-hover:text-white transition-transform inline-block">✓</span>
+              </span>
+            </a>
 
             {/* Subtle BGM Toggle */}
             <button 
