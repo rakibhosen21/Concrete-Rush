@@ -199,10 +199,6 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  private createRoad() {
-    // Road logic is handled in update via roadGraphics
-  }
-
   private setupInputs() {
     this.input.keyboard?.on('keydown-LEFT', () => this.moveLane(-1));
     this.input.keyboard?.on('keydown-RIGHT', () => this.moveLane(1));
@@ -343,28 +339,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createRoad() {
-    const centerX = this.scale.width / 2;
-    const roadWidth = Math.min(this.scale.width * 0.8, 500);
-    
-    // Asphalt surface
-    this.add.rectangle(centerX, this.scale.height / 2, roadWidth, this.scale.height, 0x121212).setDepth(-5);
-    
-    // Side curbs
-    this.add.rectangle(centerX - roadWidth/2 - 5, this.scale.height/2, 10, this.scale.height, 0x00f0ff, 0.4).setDepth(-4);
-    this.add.rectangle(centerX + roadWidth/2 + 5, this.scale.height/2, 10, this.scale.height, 0xfacc15, 0.4).setDepth(-4);
-
-    // Lane lines Group
-    this.roadGroup = this.add.group();
-    const laneWidth = roadWidth / 3;
-    
-    // Create scrolling lane markers
-    for (let j = 0; j < 2; j++) {
-        const lx = centerX - roadWidth/2 + (j + 1) * laneWidth;
-        for (let i = 0; i < 10; i++) {
-            const line = this.add.rectangle(lx, i * 200, 6, 60, 0xffffff, 0.3).setDepth(-3);
-            this.roadGroup.add(line);
-        }
-    }
+    // Road logic is handled in update via roadGraphics
   }
 
   private createPlayer() {

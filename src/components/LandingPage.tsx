@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Volume2, VolumeX, Globe, RotateCcw, Smartphone } from 'lucide-react';
+import { Volume2, VolumeX, Globe } from 'lucide-react';
 import { AudioService } from '../game/AudioService';
 
 interface LandingPageProps {
@@ -14,7 +14,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
   const [isMuted, setIsMuted] = useState(AudioService.getIsMenuMuted());
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [showRotatePrompt, setShowRotatePrompt] = useState(false);
 
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -24,19 +23,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
 
   const checkOrientationAndStart = () => {
     AudioService.playClick();
-    
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isPortrait = window.innerHeight > window.innerWidth;
-
-    if (isMobile && isPortrait) {
-      setShowRotatePrompt(true);
-    } else {
-      startLoadingSequence();
-    }
+    startLoadingSequence();
   };
 
   const startLoadingSequence = () => {
-    setShowRotatePrompt(false);
     setIsLoading(true);
     setLoadingProgress(0);
     
@@ -53,14 +43,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
   };
 
   useEffect(() => {
-    const handleOrientation = () => {
-      if (showRotatePrompt && window.innerWidth > window.innerHeight) {
-        startLoadingSequence();
-      }
-    };
-    window.addEventListener('resize', handleOrientation);
-    return () => window.removeEventListener('resize', handleOrientation);
-  }, [showRotatePrompt]);
+    // Sequence starts when function is called
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-black text-white selection:bg-yellow-400 selection:text-black overflow-hidden relative flex flex-col pointer-events-none">
@@ -241,25 +225,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGarageOpen,
 
       {/* Overlays */}
       <AnimatePresence>
-        {showRotatePrompt && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-8 pointer-events-auto"
-          >
-            <motion.div
-              animate={{ rotate: 90 }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="mb-8 text-cyan-400"
-            >
-              <Smartphone size={64} />
-            </motion.div>
-            <h2 className="text-2xl font-black italic tracking-tighter text-white mb-4 uppercase text-center">ROTATE DEVICE</h2>
-            <p className="text-white/60 font-mono text-sm tracking-widest uppercase text-center max-w-xs">Optimal experience requires landscape orientation</p>
-          </motion.div>
-        )}
-
         {isLoading && (
           <motion.div
             initial={{ opacity: 0 }}

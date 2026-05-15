@@ -29,15 +29,6 @@ export const GameContainer: React.FC<GameContainerProps> = ({
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
   const [isMuted, setIsMuted] = useState(AudioService.getIsGameMuted());
-  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     if (gameRef.current) {
@@ -117,8 +108,8 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   };
 
   return (
-    <div className={`relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full ${isLandscape ? 'h-full' : 'h-auto'} sm:h-auto`}>
-      <div className={`w-full ${isLandscape ? 'aspect-video max-w-none' : 'aspect-[9/16] max-w-[500px]'} relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_10px_rgba(0,0,0,1)] ring-1 ring-white/5`}>
+    <div className="relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full h-auto sm:h-auto">
+      <div className="w-full aspect-[9/16] max-w-[500px] relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_10px_rgba(0,0,0,1)] ring-1 ring-white/5">
         <div 
           id="game-container" 
           className="w-full h-full relative"
@@ -142,46 +133,10 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           }}
           className="absolute top-0 left-1/4 right-1/4 h-12 z-10 cursor-pointer lg:hidden"
         />
-
-        {/* Overlay Controls in Landscape Mobile */}
-        {gameState === 'PLAYING' && isLandscape && (
-            <div className="absolute inset-0 pointer-events-none z-40 lg:hidden flex justify-between p-10 items-end">
-                <div className="flex gap-16">
-                    <button 
-                        onPointerDown={(e) => {
-                            (e.target as HTMLElement).setPointerCapture(e.pointerId);
-                            moveCar(-1);
-                        }}
-                        className="w-24 h-24 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-full flex items-center justify-center pointer-events-auto active:scale-90 active:bg-white/20 transition-all"
-                    >
-                        <ChevronLeft size={48} className="text-white/60" />
-                    </button>
-                    <button 
-                        onPointerDown={(e) => {
-                            (e.target as HTMLElement).setPointerCapture(e.pointerId);
-                            moveCar(1);
-                        }}
-                        className="w-24 h-24 bg-white/5 backdrop-blur-sm border-2 border-white/10 rounded-full flex items-center justify-center pointer-events-auto active:scale-90 active:bg-white/20 transition-all"
-                    >
-                        <ChevronRight size={48} className="text-white/60" />
-                    </button>
-                </div>
-                <button 
-                    onPointerDown={(e) => {
-                        (e.target as HTMLElement).setPointerCapture(e.pointerId);
-                        jump();
-                    }}
-                    className="w-32 h-24 bg-yellow-400/10 backdrop-blur-sm border-2 border-yellow-400/20 rounded-2xl flex flex-col items-center justify-center pointer-events-auto active:scale-90 active:bg-yellow-400/30 transition-all"
-                >
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-500 mb-1">Boost</span>
-                    <div className="w-12 h-1.5 bg-yellow-400/40 rounded-full" />
-                </button>
-            </div>
-        )}
       </div>
 
       {/* Mobile Controls - Portrait Mode Bottom Bar */}
-      {gameState === 'PLAYING' && !isLandscape && (
+      {gameState === 'PLAYING' && (
         <div className="lg:hidden w-full h-[100px] shrink-0 pointer-events-none flex gap-2 z-30 mt-4 px-2">
            <button 
              onPointerDown={(e) => {
