@@ -63,169 +63,179 @@ export default class MainScene extends Phaser.Scene {
   }
 
   preload() {
-    // coin-tex: yellow circle with $C text
-    const coinCanvas = this.textures.createCanvas('coin-tex', 60, 60);
-    const coinCtx = coinCanvas.getContext();
-    coinCtx.fillStyle = '#FFD700';
-    coinCtx.beginPath();
-    coinCtx.arc(30, 30, 28, 0, Math.PI * 2);
-    coinCtx.fill();
-    coinCtx.strokeStyle = '#FFF';
-    coinCtx.lineWidth = 2;
-    coinCtx.stroke();
-    coinCtx.fillStyle = '#000';
-    coinCtx.font = 'bold 14px monospace';
-    coinCtx.textAlign = 'center';
-    coinCtx.textBaseline = 'middle';
-    coinCtx.fillText('$C', 30, 30);
-    coinCanvas.refresh();
+    if (!this.textures.exists('coin-tex')) {
+        // coin-tex: yellow circle with $C text
+        const coinCanvas = this.textures.createCanvas('coin-tex', 60, 60);
+        const coinCtx = coinCanvas.getContext();
+        coinCtx.fillStyle = '#FFD700';
+        coinCtx.beginPath();
+        coinCtx.arc(30, 30, 28, 0, Math.PI * 2);
+        coinCtx.fill();
+        coinCtx.strokeStyle = '#FFF';
+        coinCtx.lineWidth = 2;
+        coinCtx.stroke();
+        coinCtx.fillStyle = '#000';
+        coinCtx.font = 'bold 14px monospace';
+        coinCtx.textAlign = 'center';
+        coinCtx.textBaseline = 'middle';
+        coinCtx.fillText('$C', 30, 30);
+        coinCanvas.refresh();
+    }
 
-    // light-trail: small white dot
-    const trailCanvas = this.textures.createCanvas('light-trail', 8, 8);
-    const trailCtx = trailCanvas.getContext();
-    trailCtx.fillStyle = '#ffffff';
-    trailCtx.beginPath();
-    trailCtx.arc(4, 4, 4, 0, Math.PI * 2);
-    trailCtx.fill();
-    trailCanvas.refresh();
+    if (!this.textures.exists('light-trail')) {
+        // light-trail: small white dot
+        const trailCanvas = this.textures.createCanvas('light-trail', 8, 8);
+        const trailCtx = trailCanvas.getContext();
+        trailCtx.fillStyle = '#ffffff';
+        trailCtx.beginPath();
+        trailCtx.arc(4, 4, 4, 0, Math.PI * 2);
+        trailCtx.fill();
+        trailCanvas.refresh();
+    }
 
-    // boost-tex: green diamond
-    const boostCanvas = this.textures.createCanvas('boost-tex', 40, 40);
-    const boostCtx = boostCanvas.getContext();
-    boostCtx.fillStyle = '#00ff88';
-    boostCtx.beginPath();
-    boostCtx.moveTo(20, 0);
-    boostCtx.lineTo(40, 20);
-    boostCtx.lineTo(20, 40);
-    boostCtx.lineTo(0, 20);
-    boostCtx.closePath();
-    boostCtx.fill();
-    boostCanvas.refresh();
+    if (!this.textures.exists('boost-tex')) {
+        // boost-tex: green diamond
+        const boostCanvas = this.textures.createCanvas('boost-tex', 40, 40);
+        const boostCtx = boostCanvas.getContext();
+        boostCtx.fillStyle = '#00ff88';
+        boostCtx.beginPath();
+        boostCtx.moveTo(20, 0);
+        boostCtx.lineTo(40, 20);
+        boostCtx.lineTo(20, 40);
+        boostCtx.lineTo(0, 20);
+        boostCtx.closePath();
+        boostCtx.fill();
+        boostCanvas.refresh();
+    }
 
     // car-tex: player car
-    Object.entries(SKINS).forEach(([id, config]) => {
-        const carCanvas = this.textures.createCanvas(`car-${id}`, 48, 90);
-        const carCtx = carCanvas.getContext();
-        const bodyHex = '#' + config.body.toString(16).padStart(6, '0');
-        const glowHex = '#' + config.glow.toString(16).padStart(6, '0');
+    if (!this.textures.exists(`car-${Object.keys(SKINS)[0]}`)) {
+        Object.entries(SKINS).forEach(([id, config]) => {
+            const carCanvas = this.textures.createCanvas(`car-${id}`, 48, 90);
+            const carCtx = carCanvas.getContext();
+            const bodyHex = '#' + config.body.toString(16).padStart(6, '0');
+            const glowHex = '#' + config.glow.toString(16).padStart(6, '0');
 
-        // Car body
-        carCtx.fillStyle = bodyHex;
-        if (typeof carCtx.roundRect === 'function') {
-            carCtx.roundRect(4, 8, 40, 74, 8);
-        } else {
-            carCtx.rect(4, 8, 40, 74);
-        }
-        carCtx.fill();
-
-        // Specific decals based on skin
-        if (id === 'GOLDEN CIRCUIT') {
-            carCtx.strokeStyle = '#ffffff';
-            carCtx.lineWidth = 1;
-            carCtx.beginPath();
-            for(let i=10; i<80; i+=20) {
-                carCtx.moveTo(4, i);
-                carCtx.lineTo(44, i+10);
-            }
-            carCtx.stroke();
-        } else if (id === 'VOID STALKER') {
-            carCtx.fillStyle = '#ff0000';
-            carCtx.fillRect(10, 40, 28, 2);
-            carCtx.fillRect(10, 50, 28, 2);
-        } else if (id === 'CONCRETE KING') {
-            const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8b00ff'];
-            colors.forEach((c, i) => {
-                carCtx.fillStyle = c;
-                carCtx.fillRect(4 + (i * 5.7), 8, 5.7, 74);
-            });
+            // Car body
             carCtx.fillStyle = bodyHex;
-            carCtx.fillRect(10, 15, 28, 60);
-        } else if (id === 'NEON GHOST') {
-            carCtx.strokeStyle = '#ffffff';
-            carCtx.lineWidth = 2;
-            carCtx.strokeRect(6, 10, 36, 70);
-        } else if (id === 'INFERNO RUNNER') {
-            carCtx.fillStyle = '#ff6600';
-            carCtx.beginPath();
-            carCtx.moveTo(4, 80);
-            carCtx.lineTo(10, 50);
-            carCtx.lineTo(24, 70);
-            carCtx.lineTo(38, 50);
-            carCtx.lineTo(44, 80);
-            carCtx.fill();
-        } else if (id === 'ARCTIC WOLF') {
-            carCtx.fillStyle = '#00bfff';
-            carCtx.globalAlpha = 0.3;
-            for(let i=0; i<10; i++) {
-                carCtx.fillRect(Math.random()*40, Math.random()*80, 5, 5);
+            if (typeof carCtx.roundRect === 'function') {
+                carCtx.roundRect(4, 8, 40, 74, 8);
+            } else {
+                carCtx.rect(4, 8, 40, 74);
             }
+            carCtx.fill();
+
+            // Specific decals based on skin
+            if (id === 'GOLDEN CIRCUIT') {
+                carCtx.strokeStyle = '#ffffff';
+                carCtx.lineWidth = 1;
+                carCtx.beginPath();
+                for(let i=10; i<80; i+=20) {
+                    carCtx.moveTo(4, i);
+                    carCtx.lineTo(44, i+10);
+                }
+                carCtx.stroke();
+            } else if (id === 'VOID STALKER') {
+                carCtx.fillStyle = '#ff0000';
+                carCtx.fillRect(10, 40, 28, 2);
+                carCtx.fillRect(10, 50, 28, 2);
+            } else if (id === 'CONCRETE KING') {
+                const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8b00ff'];
+                colors.forEach((c, i) => {
+                    carCtx.fillStyle = c;
+                    carCtx.fillRect(4 + (i * 5.7), 8, 5.7, 74);
+                });
+                carCtx.fillStyle = bodyHex;
+                carCtx.fillRect(10, 15, 28, 60);
+            } else if (id === 'NEON GHOST') {
+                carCtx.strokeStyle = '#ffffff';
+                carCtx.lineWidth = 2;
+                carCtx.strokeRect(6, 10, 36, 70);
+            } else if (id === 'INFERNO RUNNER') {
+                carCtx.fillStyle = '#ff6600';
+                carCtx.beginPath();
+                carCtx.moveTo(4, 80);
+                carCtx.lineTo(10, 50);
+                carCtx.lineTo(24, 70);
+                carCtx.lineTo(38, 50);
+                carCtx.lineTo(44, 80);
+                carCtx.fill();
+            } else if (id === 'ARCTIC WOLF') {
+                carCtx.fillStyle = '#00bfff';
+                carCtx.globalAlpha = 0.3;
+                for(let i=0; i<10; i++) {
+                    carCtx.fillRect(Math.random()*40, Math.random()*80, 5, 5);
+                }
+                carCtx.globalAlpha = 1.0;
+            } else if (id === 'TOXIC RACER') {
+                carCtx.fillStyle = '#000000';
+                carCtx.beginPath();
+                carCtx.arc(24, 45, 10, 0, Math.PI*2);
+                carCtx.fill();
+                carCtx.strokeStyle = '#32cd32';
+                carCtx.stroke();
+            } else if (id === 'CHROME DEMON') {
+                carCtx.fillStyle = '#ff0000';
+                carCtx.beginPath();
+                carCtx.moveTo(4, 8); carCtx.lineTo(0, 0); carCtx.lineTo(10, 8);
+                carCtx.moveTo(44, 8); carCtx.lineTo(48, 0); carCtx.lineTo(38, 8);
+                carCtx.fill();
+            }
+
+            // BRANDING: "CONCRETE" text
+            carCtx.fillStyle = (id === 'GOLDEN CIRCUIT' || id === 'TOXIC RACER') ? '#000000' : '#ffffff';
+            if (id === 'INFERNO RUNNER') carCtx.fillStyle = '#ff6600';
+            if (id === 'ARCTIC WOLF') carCtx.fillStyle = '#00bfff';
+            if (id === 'CONCRETE LEGEND') carCtx.fillStyle = '#ffd700';
+            
+            carCtx.font = id === 'CONCRETE LEGEND' ? 'bold 10px Arial' : '8px monospace';
+            carCtx.textAlign = 'center';
+            
+            if (id === 'CONCRETE LEGEND') {
+                carCtx.fillText('CONCRETE', 24, 25);
+                carCtx.fillText('LEGEND', 24, 35);
+            } else if (id === 'CONCRETE KING') {
+                carCtx.fillStyle = '#ffd700';
+                carCtx.fillText('CONCRETE', 24, 15);
+            } else if (id === 'SHADOW BLADE') {
+                carCtx.font = 'bold 8px Courier';
+                carCtx.fillText('CONCRETE', 24, 45);
+            } else {
+                carCtx.fillText('CONCRETE', 24, 45);
+            }
+
+            // Windshield
+            carCtx.fillStyle = '#00f0ff';
+            carCtx.globalAlpha = 0.6;
+            carCtx.fillRect(10, 15, 28, 20);
             carCtx.globalAlpha = 1.0;
-        } else if (id === 'TOXIC RACER') {
-            carCtx.fillStyle = '#000000';
-            carCtx.beginPath();
-            carCtx.arc(24, 45, 10, 0, Math.PI*2);
-            carCtx.fill();
-            carCtx.strokeStyle = '#32cd32';
-            carCtx.stroke();
-        } else if (id === 'CHROME DEMON') {
+
+            // Tail lights
             carCtx.fillStyle = '#ff0000';
-            carCtx.beginPath();
-            carCtx.moveTo(4, 8); carCtx.lineTo(0, 0); carCtx.lineTo(10, 8);
-            carCtx.moveTo(44, 8); carCtx.lineTo(48, 0); carCtx.lineTo(38, 8);
-            carCtx.fill();
-        }
+            carCtx.fillRect(6, 75, 12, 8);
+            carCtx.fillRect(30, 75, 12, 8);
+            
+            carCanvas.refresh();
+        });
+    }
 
-        // BRANDING: "CONCRETE" text
-        carCtx.fillStyle = (id === 'GOLDEN CIRCUIT' || id === 'TOXIC RACER') ? '#000000' : '#ffffff';
-        if (id === 'INFERNO RUNNER') carCtx.fillStyle = '#ff6600';
-        if (id === 'ARCTIC WOLF') carCtx.fillStyle = '#00bfff';
-        if (id === 'CONCRETE LEGEND') carCtx.fillStyle = '#ffd700';
-        
-        carCtx.font = id === 'CONCRETE LEGEND' ? 'bold 10px Arial' : '8px monospace';
-        carCtx.textAlign = 'center';
-        
-        if (id === 'CONCRETE LEGEND') {
-            carCtx.fillText('CONCRETE', 24, 25);
-            carCtx.fillText('LEGEND', 24, 35);
-        } else if (id === 'CONCRETE KING') {
-             carCtx.fillStyle = '#ffd700';
-             carCtx.fillText('CONCRETE', 24, 15);
-        } else if (id === 'SHADOW BLADE') {
-            carCtx.font = 'bold 8px Courier';
-            carCtx.fillText('CONCRETE', 24, 45);
-        } else {
-            carCtx.fillText('CONCRETE', 24, 45);
-        }
-
-        // Windshield
-        carCtx.fillStyle = '#00f0ff';
-        carCtx.globalAlpha = 0.6;
-        carCtx.fillRect(10, 15, 28, 20);
-        carCtx.globalAlpha = 1.0;
-
-        // Tail lights
-        carCtx.fillStyle = '#ff0000';
-        carCtx.fillRect(6, 75, 12, 8);
-        carCtx.fillRect(30, 75, 12, 8);
-        
-        carCanvas.refresh();
-    });
-
-    // Tree texture
-    const treeCanvas = this.textures.createCanvas('tree-tex', 60, 100);
-    const treeCtx = treeCanvas.getContext();
-    // Trunk
-    treeCtx.fillStyle = '#5D4037';
-    treeCtx.fillRect(25, 60, 10, 40);
-    // Leaves
-    treeCtx.fillStyle = '#2E7D32';
-    treeCtx.beginPath();
-    treeCtx.arc(30, 40, 30, 0, Math.PI * 2);
-    treeCtx.fill();
-    treeCtx.beginPath();
-    treeCtx.arc(30, 20, 20, 0, Math.PI * 2);
-    treeCtx.fill();
-    treeCanvas.refresh();
+    if (!this.textures.exists('tree-tex')) {
+        // Tree texture
+        const treeCanvas = this.textures.createCanvas('tree-tex', 60, 100);
+        const treeCtx = treeCanvas.getContext();
+        // Trunk
+        treeCtx.fillStyle = '#5D4037';
+        treeCtx.fillRect(25, 60, 10, 40);
+        // Leaves
+        treeCtx.fillStyle = '#2E7D32';
+        treeCtx.beginPath();
+        treeCtx.arc(30, 40, 30, 0, Math.PI * 2);
+        treeCtx.fill();
+        treeCtx.beginPath();
+        treeCtx.arc(30, 20, 20, 0, Math.PI * 2);
+        treeCtx.fill();
+        treeCanvas.refresh();
+    }
   }
 
   create() {

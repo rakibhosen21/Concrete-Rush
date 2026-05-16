@@ -77,7 +77,11 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     if (gameRef.current) {
         if (gameState === 'PLAYING') {
           gameRef.current.scene.stop('MenuScene');
-          gameRef.current.scene.start('MainScene');
+          setTimeout(() => {
+            if (gameRef.current) {
+              gameRef.current.scene.start('MainScene');
+            }
+          }, 100);
         } else if (gameState === 'HOME' || gameState === 'INTRO') {
           gameRef.current.scene.stop('MainScene');
           gameRef.current.scene.start('MenuScene');
