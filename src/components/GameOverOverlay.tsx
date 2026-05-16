@@ -1,122 +1,129 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, RefreshCw, Home, Share2, Check } from 'lucide-react';
+import { Trophy, RefreshCw, Home, Share2, Check, ChevronRight } from 'lucide-react';
 import { COLORS } from '../constants';
 
 interface GameOverOverlayProps {
   score: number;
+  cCollected: number;
+  distance: number;
+  multiplier: number;
   onRestart: () => void;
   onHome: () => void;
+  userStats?: any;
 }
 
-export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, onRestart, onHome }) => {
-  const storedStats = localStorage.getItem('concrete_user_stats');
-  const userStats = storedStats ? JSON.parse(storedStats) : null;
-  const bestScore = (userStats?.bestScore != null && userStats.bestScore > 0)
-    ? userStats.bestScore
-    : score;
-  const isNewHigh = score > bestScore;
+export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, cCollected, distance, multiplier, onRestart, onHome, userStats }) => {
   const [copied, setCopied] = useState(false);
   
-  if (isNewHigh) {
-    const updatedStats = { ...userStats, bestScore: score };
-    localStorage.setItem('concrete_user_stats', JSON.stringify(updatedStats));
-    localStorage.setItem('concrete_high_score', score.toString());
-  }
-
   const getGrade = (s: number) => {
-    if (s >= 200) return { l: 'S', d: 'NETWORK LEGEND' };
-    if (s >= 101) return { l: 'A', d: 'GHOST RUNNER' };
-    if (s >= 51) return { l: 'B', d: 'FIELD AGENT' };
-    if (s >= 21) return { l: 'C', d: 'OPERATIVE' };
+    if (s >= 500) return { l: 'S', d: 'NETWORK LEGEND' };
+    if (s >= 250) return { l: 'A', d: 'GHOST RUNNER' };
+    if (s >= 100) return { l: 'B', d: 'FIELD AGENT' };
+    if (s >= 50) return { l: 'C', d: 'OPERATIVE' };
     return { l: 'D', d: 'SIGNAL LOST' };
   };
 
   const grade = getGrade(score);
-
+  const bestScore = userStats?.bestScore || score;
+  
   const handleShare = () => {
-    const text = `Protocol complete. Yield capture: ${score}. Grade: ${grade.l}. Node status: STABLE. Run concrete-rush.online`;
+    const text = `Operative complete. Yield capture: ${score}. Distance: ${distance}m. Node status: STABLE. Run concrete-rush.online`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openConcrete = () => {
+    window.open('https://www.concrete.xyz/', '_blank');
   };
 
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-6"
+      className="absolute inset-0 bg-black/90 backdrop-blur-xl flex items-center justify-center z-50 p-4 sm:p-6"
     >
       <div className="absolute inset-0 bg-grid-cyber opacity-10 pointer-events-none" />
 
       <motion.div 
-        initial={{ scale: 0.95, y: 10 }}
+        initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
-        className="max-w-md w-full bg-zinc-900 border-2 border-yellow-400/20 rounded-xl p-8 text-center relative shadow-[0_0_100px_rgba(250,204,21,0.1)]"
+        className="max-w-md w-full bg-[#0a0a1a] border-2 border-yellow-400/20 rounded-2xl p-6 sm:p-8 text-center relative shadow-[0_0_80px_rgba(250,204,21,0.15)] overflow-y-auto max-h-[90vh]"
       >
-        <div className="w-20 h-20 bg-yellow-400/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-400/20 relative">
-          <Trophy size={40} className="text-yellow-400" />
-          <motion.div 
-            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute inset-0 rounded-full bg-yellow-400/20" 
-          />
+        <div className="flex items-center justify-center gap-2 mb-8">
+            <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500">System_Connection_Terminated</span>
         </div>
-        
-        <h2 
-          className="text-4xl font-black text-white mb-1 italic tracking-tighter uppercase relative glitch"
-          data-text="RUN TERMINATED"
-        >
-          Run Terminated
-        </h2>
-        <p className="text-zinc-500 mb-8 font-bold tracking-widest text-[9px] uppercase">
-          Frequency destabilized. Yield captured.
-        </p>
 
         <motion.div 
-          initial={{ opacity: 0, scale: 2 }}
+          initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", damping: 10, delay: 0.5 }}
-          className="mb-8 p-4 bg-zinc-800/50 rounded-lg border border-white/5"
+          transition={{ type: "spring", damping: 12 }}
+          className="mb-8"
         >
-           <div className="text-[10px] text-zinc-500 tracking-[0.4em] uppercase mb-1">Performance_Grade</div>
-           <div className="text-6xl font-black italic text-yellow-400 leading-none mb-1">{grade.l}</div>
-           <div className="text-[10px] font-mono text-white/40 tracking-widest">{grade.d}</div>
+           <div className="text-[10px] text-zinc-500 tracking-[0.4em] uppercase mb-2 font-black">Performance_Grade</div>
+           <div className="text-6xl sm:text-8xl font-black italic text-yellow-400 leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.3)]">{grade.l}</div>
+           <div className="text-[10px] sm:text-xs font-black italic text-yellow-400 leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.3)] mt-2">All-Time Best: {bestScore.toLocaleString()}</div>
         </motion.div>
 
-        <div className="grid grid-cols-2 gap-4 mb-10">
-          <div className="bg-black/20 p-5 rounded-lg border border-white/5">
-            <div className="text-[9px] text-zinc-600 uppercase font-bold mb-1 tracking-widest">Yield</div>
-            <div className="text-3xl font-black italic tracking-tighter text-white">{score.toLocaleString()}</div>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col items-center">
+            <span className="text-[8px] text-zinc-600 uppercase font-black mb-1 tracking-widest leading-none">Yield Captured</span>
+            <span className="text-2xl sm:text-3xl font-black italic text-white tabular-nums">{score.toLocaleString()}</span>
           </div>
-          <div className="bg-black/20 p-5 rounded-lg border border-white/5">
-            <div className="text-[9px] text-zinc-600 uppercase font-bold mb-1 tracking-widest">Peak</div>
-            <div className="text-3xl font-black italic tracking-tighter text-yellow-400">{(isNewHigh ? score : highScore).toLocaleString()}</div>
+          <div className="bg-black/40 p-4 rounded-xl border border-yellow-400/20 flex flex-col items-center">
+            <span className="text-[8px] text-yellow-500 uppercase font-black mb-1 tracking-widest leading-none">$C Collected</span>
+            <span className="text-2xl sm:text-3xl font-black italic text-yellow-400 tabular-nums">{cCollected}</span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-3 gap-2 mb-8">
+            <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                <span className="text-[6px] text-zinc-500 uppercase font-black mb-1">Total Yield</span>
+                <span className="text-sm font-black italic text-zinc-300">{(userStats?.totalCoins || 0).toLocaleString()}</span>
+            </div>
+            <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                <span className="text-[6px] text-zinc-500 uppercase font-black mb-1">Total Games</span>
+                <span className="text-sm font-black italic text-zinc-300">{userStats?.gamesPlayed || 0}</span>
+            </div>
+            <div className="bg-white/5 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                <span className="text-[6px] text-zinc-500 uppercase font-black mb-1">Distance PB</span>
+                <span className="text-sm font-black italic text-zinc-300">{userStats?.bestDistance || 0}m</span>
+            </div>
+        </div>
+
+        <div className="space-y-3">
           <button 
             onClick={onRestart}
-            className="skew-btn w-full bg-yellow-400 hover:bg-white text-black font-black py-4 text-lg tracking-wider italic transition-all active:scale-95"
+            className="skew-btn w-full bg-yellow-400 hover:bg-white text-black font-black py-4 text-lg tracking-[0.2em] italic transition-all active:scale-95 flex items-center justify-center gap-3"
           >
-            <span>Restart Protocol</span>
+            <RefreshCw size={20} />
+            PLAY AGAIN
+          </button>
+
+          <button 
+            onClick={openConcrete}
+            className="w-full bg-[#0a0a1a] hover:bg-zinc-800 border-2 border-white/20 text-white font-black py-4 rounded-xl text-xs tracking-[0.3em] uppercase transition-all active:scale-95 flex items-center justify-center gap-2 group"
+          >
+            START EXPLORING - CONCRETE
+            <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </button>
           
           <div className="grid grid-cols-2 gap-3">
             <button 
               onClick={handleShare}
-              className="w-full bg-zinc-800/50 hover:bg-zinc-700/50 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all border border-white/5 uppercase text-[10px] tracking-widest"
+              className="w-full bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/5 uppercase text-[9px] tracking-widest"
             >
-              {copied ? <Check size={14} className="text-green-500" /> : <Share2 size={14} className="opacity-50" />}
-              {copied ? 'Copied' : 'Share'}
+              {copied ? <Check size={14} className="text-green-500" /> : <Share2 size={14} />}
+              {copied ? 'Copied' : 'Share Record'}
             </button>
             <button 
               onClick={onHome}
-              className="w-full bg-zinc-800/50 hover:bg-zinc-700/50 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all border border-white/5 uppercase text-[10px] tracking-widest"
+              className="w-full bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/5 uppercase text-[9px] tracking-widest"
             >
-              <Home size={14} className="opacity-50" />
-              Exit
+              <Home size={14} />
+              Return Home
             </button>
           </div>
         </div>

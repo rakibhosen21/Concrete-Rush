@@ -8,25 +8,33 @@ import { AudioService } from '../game/AudioService';
 
 interface GameContainerProps {
   onScoreUpdate: (score: number) => void;
+  onCCollectedUpdate: (c: number) => void;
   onHealthUpdate: (health: number) => void;
   onMultiplierUpdate: (multiplier: number) => void;
-  onGameOver: (finalScore: number) => void;
-  onCCollectedUpdate?: (collected: number) => void;
-  onPauseUpdate?: (paused: boolean) => void;
-  gameState: 'INTRO' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+  onGameOver: (data: { score: number; cCollected: number; distance: number; multiplier: number }) => void;
+  onPauseUpdate: (paused: boolean) => void;
+  gameState: 'INTRO' | 'PROFILE_SETUP' | 'HOME' | 'PLAYING' | 'GAME_OVER';
+  userStats: any;
 }
 
 export const GameContainer: React.FC<GameContainerProps> = ({
   onScoreUpdate,
+  onCCollectedUpdate,
   onHealthUpdate,
   onMultiplierUpdate,
   onGameOver,
-  onCCollectedUpdate,
   onPauseUpdate,
   gameState,
+  userStats,
 }) => {
   const gameRef = useRef<Phaser.Game | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(AudioService.getIsGameMuted());
+
+  useEffect(() => {
+    if (gameRef.current) {
+        gameRef.current.registry.set('userStats', userStats);
+    }
+  }, [userStats]);
 
   useEffect(() => {
     if (!gameRef.current) {
@@ -36,11 +44,14 @@ export const GameContainer: React.FC<GameContainerProps> = ({
       };
       const game = new Phaser.Game(config);
       gameRef.current = game;
+      game.registry.set('userStats', userStats);
 
       game.events.on('update-score', onScoreUpdate);
+      game.events.on('update-c-collected', onCCollectedUpdate);
       game.events.on('update-health', onHealthUpdate);
       game.events.on('update-multiplier', onMultiplierUpdate);
       game.events.on('game-over', onGameOver);
+      game.events.on('game-paused', onPauseUpdate);
     }
 
     return () => {
@@ -52,75 +63,118 @@ export const GameContainer: React.FC<GameContainerProps> = ({
   }, []);
 
   useEffect(() => {
+    const handlePhaserResume = () => {
+        if (gameRef.current && gameRef.current.scene && gameState === 'PLAYING') {
+            const scene = gameRef.current.scene.getScene('MainScene') as MainScene;
+            if (scene && scene.sys && scene.sys.isActive()) {
+                gameRef.current.events.emit('resume-game');
+            }
+        }
+    };
+
+    window.addEventListener('phaser-resume', handlePhaserResume);
+
     if (gameRef.current) {
-      if (gameState === 'PLAYING') {
-        gameRef.current.scene.stop('MenuScene');
-        gameRef.current.scene.start('MainScene');
-      } else if (gameState === 'HOME' || gameState === 'INTRO') {
-        gameRef.current.scene.stop('MainScene');
-        gameRef.current.scene.start('MenuScene');
-      }
+        if (gameState === 'PLAYING') {
+          gameRef.current.scene.stop('MenuScene');
+          gameRef.current.scene.start('MainScene');
+        } else if (gameState === 'HOME' || gameState === 'INTRO') {
+          gameRef.current.scene.stop('MainScene');
+          gameRef.current.scene.start('MenuScene');
+        }
     }
+
+    return () => window.removeEventListener('phaser-resume', handlePhaserResume);
   }, [gameState]);
 
   const toggleMute = () => {
-    const muted = AudioService.toggleMute();
+    const muted = AudioService.toggleGameMute();
     setIsMuted(muted);
   };
 
-  const moveCar = (dir: -1 | 1) => {
+   const moveCar = (dir: -1 | 1) => {
     if (gameRef.current && gameState === 'PLAYING') {
-       const scene = gameRef.current.scene.getScene('MainScene') as MainScene;
-       if (scene) {
-          // Calling the private moveLane would require it to be public or triggered by event
-          gameRef.current.events.emit('move-car', dir);
-       }
+       gameRef.current.events.emit('move-car', dir);
     }
   };
 
-  const width = Math.floor(window.innerWidth * 0.65);
-  const height = Math.floor(window.innerHeight * 0.75);
+  const jump = () => {
+    if (gameRef.current && gameState === 'PLAYING') {
+        const scene = gameRef.current.scene.getScene('MainScene') as any;
+        if (scene) {
+            scene.jump();
+        }
+    }
+  };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#050208] overflow-hidden select-none">
-      <div className="relative" style={{ width, height }}>
+    <div className={`relative flex flex-col items-center justify-center bg-[#050208] overflow-hidden select-none w-full ${gameState === 'PLAYING' ? 'h-full' : 'h-auto'}`}>
+      <div className={`w-full relative flex-shrink min-h-0 sm:rounded-2xl overflow-hidden shadow-[0_0_10px_rgba(0,0,0,1)] ring-1 ring-white/5 ${gameState === 'PLAYING' ? 'flex-1 aspect-auto max-w-none' : 'aspect-[9/16] max-w-[420px]'}`}>
         <div 
           id="game-container" 
-          className="w-full h-full relative shadow-[0_0_50px_rgba(0,240,255,0.3)] border-2 border-[#00f0ff]/30 rounded-lg overflow-hidden"
+          className="w-full h-full relative"
         />
 
         {/* Mute Button */}
         <button 
           onClick={toggleMute}
-          className="absolute top-4 right-4 z-20 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/60 hover:text-yellow-400 transition-all active:scale-95"
+          className="absolute top-4 right-4 z-50 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/60 hover:text-yellow-400 transition-all active:scale-95 pointer-events-auto"
         >
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
 
-        {/* Mobile Controls Overlay */}
-        {gameState === 'PLAYING' && (
-          <div className="md:hidden absolute inset-0 pointer-events-none flex flex-col justify-end p-6 z-10">
-             <div className="flex justify-between w-full pointer-events-auto">
-                <button 
-                  onPointerDown={() => moveCar(-1)}
-                  className="w-20 h-20 bg-cyan-400/10 backdrop-blur-md border border-cyan-400/40 rounded-full flex items-center justify-center text-cyan-400 active:bg-cyan-400 active:text-black transition-all"
-                >
-                  <ChevronLeft size={32} />
-                </button>
-                <button 
-                  onPointerDown={() => moveCar(1)}
-                   className="w-20 h-20 bg-cyan-400/10 backdrop-blur-md border border-cyan-400/40 rounded-full flex items-center justify-center text-cyan-400 active:bg-cyan-400 active:text-black transition-all"
-                >
-                  <ChevronRight size={32} />
-                </button>
-             </div>
-          </div>
-        )}
+        {/* Pause Trigger - Mobile tap top center */}
+        <div 
+          onClick={() => {
+              if (gameRef.current && gameState === 'PLAYING') {
+                  const scene = gameRef.current.scene.getScene('MainScene') as any;
+                  if (scene) scene.togglePause();
+              }
+          }}
+          className="absolute top-0 left-1/4 right-1/4 h-12 z-10 cursor-pointer lg:hidden"
+        />
       </div>
-      
-      {/* Background Decorative Elements for the side areas */}
-      <div className="absolute top-0 left-0 w-[17.5%] h-full bg-gradient-to-r from-black to-transparent opacity-50" />
-      <div className="absolute top-0 right-0 w-[17.5%] h-full bg-gradient-to-l from-black to-transparent opacity-50" />
+
+      {/* Mobile Controls - Portrait Mode Bottom Bar */}
+      {gameState === 'PLAYING' && (
+        <div className="lg:hidden w-full h-[100px] shrink-0 pointer-events-none flex gap-2 z-30 mt-4 px-2">
+           <button 
+             onPointerDown={(e) => {
+               (e.target as HTMLElement).setPointerCapture(e.pointerId);
+               moveCar(-1);
+               if (navigator.vibrate) navigator.vibrate(20);
+             }}
+             className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-2 border-cyan-400/30 rounded-xl active:bg-cyan-400/20 active:border-cyan-400 transition-all flex flex-col items-center justify-center group"
+           >
+             <ChevronLeft size={32} className="text-cyan-400" />
+             <span className="text-cyan-400/60 font-mono text-[10px] uppercase tracking-widest mt-1">Left</span>
+           </button>
+
+           <button 
+             onPointerDown={(e) => {
+               (e.target as HTMLElement).setPointerCapture(e.pointerId);
+               jump();
+               if (navigator.vibrate) navigator.vibrate(40);
+             }}
+             className="flex-1 pointer-events-auto h-full bg-zinc-900/80 border-2 border-white/10 rounded-xl active:bg-white/10 active:border-white transition-all flex flex-col items-center justify-center group"
+           >
+             <div className="w-10 h-1.5 bg-white/20 rounded-full mb-2" />
+             <span className="text-white/60 font-mono text-[10px] uppercase tracking-widest leading-none">Jump</span>
+           </button>
+
+           <button 
+             onPointerDown={(e) => {
+               (e.target as HTMLElement).setPointerCapture(e.pointerId);
+               moveCar(1);
+               if (navigator.vibrate) navigator.vibrate(20);
+             }}
+             className="flex-1 pointer-events-auto h-full bg-[#0a0a1a]/85 border-2 border-yellow-400/30 rounded-xl active:bg-yellow-400/20 active:border-yellow-400 transition-all flex flex-col items-center justify-center group"
+           >
+             <ChevronRight size={32} className="text-yellow-400" />
+             <span className="text-yellow-400/60 font-mono text-[10px] uppercase tracking-widest mt-1">Right</span>
+           </button>
+        </div>
+      )}
     </div>
   );
 };
