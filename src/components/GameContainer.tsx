@@ -118,7 +118,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
         {/* Mute Button */}
         <button 
           onClick={toggleMute}
-          className="absolute top-4 right-4 z-50 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/60 hover:text-yellow-400 transition-all active:scale-95 pointer-events-auto"
+          className="absolute bottom-4 right-4 z-50 p-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white/60 hover:text-yellow-400 transition-all active:scale-95 pointer-events-auto"
         >
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
