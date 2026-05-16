@@ -80,6 +80,13 @@ export const GameContainer: React.FC<GameContainerProps> = ({
           setTimeout(() => {
             if (gameRef.current) {
               gameRef.current.scene.start('MainScene');
+              // Give scene time to initialize then resume physics
+              setTimeout(() => {
+                const scene = gameRef.current?.scene.getScene('MainScene');
+                if (scene && scene.physics) {
+                  scene.physics.resume();
+                }
+              }, 100);
             }
           }, 100);
         } else if (gameState === 'HOME' || gameState === 'INTRO') {

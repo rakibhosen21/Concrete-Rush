@@ -239,6 +239,19 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
+    this.speed = 600;
+    this.score = 0;
+    this.cCollected = 0;
+    this.distance = 0;
+    this.health = 3;
+    this.maxMultiplier = 1;
+    this.currentLane = 1;
+    this.isPaused = false;
+    this.isGameOver = false;
+    this.isJumping = false;
+    this.multiplierActive = false;
+    this.roadOffset = 0;
+
     this.cameras.main.setBackgroundColor('#87CEEB'); // Day Sky Blue
     
     this.roadGraphics = this.add.graphics().setDepth(-10);
@@ -900,7 +913,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   update(time: number, delta: number) {
-    if (!this || !this.sys || !this.sys.isActive() || this.isPaused) return;
+    if (!this || !this.sys || !this.sys.isActive() || this.isGameOver || this.isPaused) return;
 
     const speedMod = (this.multiplierActive ? 2.5 : 1) * (1 + (this.score / 2000));
     const scrollAmount = this.speed * speedMod * delta / 1000;
