@@ -77,18 +77,7 @@ export const GameContainer: React.FC<GameContainerProps> = ({
     if (gameRef.current) {
         if (gameState === 'PLAYING') {
           gameRef.current.scene.stop('MenuScene');
-          setTimeout(() => {
-            if (gameRef.current) {
-              gameRef.current.scene.start('MainScene');
-              // Give scene time to initialize then resume physics
-              setTimeout(() => {
-                const scene = gameRef.current?.scene.getScene('MainScene');
-                if (scene && scene.physics) {
-                  scene.physics.resume();
-                }
-              }, 100);
-            }
-          }, 100);
+          gameRef.current.scene.start('MainScene');
         } else if (gameState === 'HOME' || gameState === 'INTRO') {
           gameRef.current.scene.stop('MainScene');
           gameRef.current.scene.start('MenuScene');
